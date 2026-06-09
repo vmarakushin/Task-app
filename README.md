@@ -1,11 +1,14 @@
 # Task Service
+### Версия 2.0
 
-Task Service — это backend приложение для управления задачами с поддержкой:
+---
+Task Service — backend приложение для управления задачами с поддержкой:
 - REST API
 - PostgreSQL (Flyway migrations)
 - Kafka events
 - Dockerized environment
 - Integration tests with Testcontainers
+- Authorization
 
 ---
 # Стек
@@ -20,6 +23,7 @@ Task Service — это backend приложение для управления
 - Docker / Docker Compose
 - Testcontainers
 - JUnit 5 / MockMvc
+- Spring Oauth + Security
 
 # Функционал
 - получение задач с пагинацией
@@ -28,15 +32,23 @@ Task Service — это backend приложение для управления
 - назначение исполнителя задаче
 - смена статуса задаче
 
+# Отправка событий в Kafka
+При создании задачи и назначении исполнителя происходит отправка события в task.created и task.assigned топики соответственно
+
+---
+
 # Запуск
 Запустите docker-compose в корне проекта, на этом всё
 
+# Порты
+## 8080 - основное приложение
+## 8081 - авторизация
+
 # Swagger
-После запуска на http://localhost:8080/swagger-ui/index.html будет доступен Swagger UI
+После запуска на http://localhost:{port}/swagger-ui/index.html будет доступен Swagger UI
 
-# Отправка сообщений в Kafka
-При создании задачи и назначении исполнителя происходит отправка события в task.created и task.assigned топики соответственно
-
-# Тесты
-Юнит-тесты для service слоя, интеграционные service -> db, service -> kafka, mockMvc -> controller -> db
-(c)Лучше плохие тесты, чем без тестов
+# История версий
+### 2.0
+- Добавлен модуль авторизации
+### 1.0
+- Первая версия с реализацией базового функционала
