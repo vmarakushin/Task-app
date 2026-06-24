@@ -42,16 +42,40 @@ services:
       timeout: 10s
       retries: 10
 
-  task-app:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HTTP_PORT: 8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    volumes:
+      - ./keycloak/realm:/opt/keycloak/data/import
+##    ports:
+##      - "8082:8082"
+    networks:
+      - task-net
+
+  task-service:
     build:
       context: .
-      dockerfile: task-application/dockerfile
-    container_name: task-app
-    ports:
-      - "8080:8080"
+      dockerfile: task-service/dockerfile
+    container_name: task-service
+##    ports:
+##      - "8083:8083"
     environment:
       DB_URL_ALIAS: postgres
-      KAFKA_URL_ALIAS: kafka
+      KAFKA_URL_ALIAS: postgres
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,23 +84,46 @@ services:
     networks:
       - task-net
 
-  auth-app:
+  auth-service:
     build:
       context: .
-      dockerfile: authorization/dockerfile
-    container_name: auth-app
-    ports:
-      - "8081:8081"
+      dockerfile: auth-service/dockerfile
+    container_name: auth-service
+##    ports:
+##      - "8081:8081"
     environment:
       JWT_SECRET: change-me-in-production-use-at-least-256-bit-secret-key!!
       DB_URL_ALIAS: postgres
+      KEYCLOAK_URL_ALIAS: keycloak
+      KAFKA_URL_ALIAS: kafka
     depends_on:
       postgres:
         condition: service_healthy
-      task-app:
+      task-service:
         condition: service_started
     networks:
       - task-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_SERVICE_URL_ALIAS: auth-service
+      TASK_SERVICE_URL_ALIAS: task-service
+      KEYCLOAK_URL_ALIAS: keycloak
+      REALM: demo
+    depends_on:
+      auth-service:
+        condition: service_started
+      task-service:
+        condition: service_started
+    networks:
+      - task-net
+
 
 networks:
   task-net:

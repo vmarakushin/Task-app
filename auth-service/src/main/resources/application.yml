@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+keycloak:
+  url: http://${KEYCLOAK_URL_ALIAS:localhost}:8082
+  realm: demo
+  client-id: auth-service
+  client-secret: auth-secret
+
+
+
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_URL_ALIAS:localhost}:9092
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: "Auth Service"

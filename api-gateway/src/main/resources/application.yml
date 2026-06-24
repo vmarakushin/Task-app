@@ -1,0 +1,69 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        wiretap: true
+      httpserver:
+        wiretap: true
+      routes:
+        - id: auth_route
+          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
+          predicates:
+            - Path=/registration, /login
+          filters:
+            - RewritePath=/(?<segment>.*), /api/auth/$\{segment}
+
+        - id: task_route
+          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
+          predicates:
+            - Path=/api/tasks/**
+          filters:
+            - TokenVerificationFilterFactory
+
+        - id: auth-actuator
+          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
+          predicates:
+            - Path=/auth-actuator/**
+          filters:
+            - RewritePath=/auth-actuator/(?<segment>.*), /actuator/${segment}
+            - TokenVerificationFilterFactory
+
+        - id: task-actuator
+          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
+          predicates:
+            - Path=/task-actuator/**
+          filters:
+            - RewritePath=/task-actuator/(?<segment>.*), /actuator/${segment}
+            - TokenVerificationFilterFactory
+
+        - id: task-swagger
+          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
+          predicates:
+            - Path=/task-swagger/**
+          filters:
+            - RewritePath=/task-swagger/(?<segment>.*), /swagger-ui/${segment}
+            - TokenVerificationFilterFactory
+
+        - id: auth-swagger
+          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
+          predicates:
+            - Path=/auth-swagger/**
+          filters:
+            - RewritePath=/auth-swagger/(?<segment>.*), /swagger-ui/${segment}
+
+##logging:
+##  level:
+    # Показывает, какой роут совпал с запросом (вы увидите "Route matched: ...")
+##    org.springframework.cloud.gateway: DEBUG
+    # Показывает, как запрос обрабатывается в WebFlux
+##    org.springframework.web.reactive: DEBUG
+    # Показывает детали HTTP-взаимодействий (заголовки, тело запроса/ответа)
+##    org.springframework.http.server.reactive: DEBUG
+    # Логи от Reactor Netty для низкоуровневого трафика
+##    reactor.netty: DEBUG
+
+keycloak:
+  url: http://${KEYCLOAK_URL_ALIAS:localhost}:8082/auth/realms/${REALM:demo}/protocol/openid-connect

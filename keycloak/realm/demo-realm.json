@@ -1,0 +1,28 @@
+{
+  "realm": "demo",
+  "enabled": true,
+
+  "clients": [
+    {
+      "clientId": "auth-service",
+      "enabled": true,
+      "publicClient": false,
+
+      "serviceAccountsEnabled": true,
+
+      "directAccessGrantsEnabled": true,
+
+      "standardFlowEnabled": false,
+
+      "protocol": "openid-connect",
+
+      "secret": "auth-secret"
+    }
+  ],
+
+  "clientScopes": [],
+
+  "roles": {
+    "realm": []
+  }
+}

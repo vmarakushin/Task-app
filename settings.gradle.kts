@@ -10,5 +10,8 @@ plugins {
 
 rootProject.name = "TaskManagerTest"
 
-include("task-application")
-include("authorization")
+include(
+    "task-service",
+    "auth-service",
+    "api-gateway"
+)

@@ -1,5 +1,5 @@
 # Task Service
-### Версия 2.0
+### Версия 3.0
 
 ---
 Task Service — backend приложение для управления задачами с поддержкой:
@@ -24,6 +24,7 @@ Task Service — backend приложение для управления зад
 - Testcontainers
 - JUnit 5 / MockMvc
 - Spring Oauth + Security
+- Keycloak
 
 # Функционал
 - получение задач с пагинацией
@@ -42,12 +43,25 @@ Task Service — backend приложение для управления зад
 
 # Порты
 ## 8080 - основное приложение
-## 8081 - авторизация
-
-# Swagger
-После запуска на http://localhost:{port}/swagger-ui/index.html будет доступен Swagger UI
+### POST /registration - Регистрация
+{
+"email":"vasilisk@mail.ru",
+"password":"K9#vT2!mQ8@xL7$wR4^nP1&z",
+"firstName":"Djedai",
+"lastName":"Vasilyev"
+}
+### POST /login - Логин
+{
+"email":"vasilisk@mail.ru",
+"password":"K9#vT2!mQ8@xL7$wR4^nP1&z"
+}
+### /api/tasks/ - API задач
 
 # История версий
+### 3.0
+- В качестве провайдера авторизации подключен Keycloak
+- Проверка авторизации выведена на Api Gateway
+
 ### 2.0
 - Добавлен модуль авторизации
 ### 1.0
