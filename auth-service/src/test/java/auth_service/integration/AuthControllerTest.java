@@ -65,7 +65,7 @@ public class AuthControllerTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Попытка регистрации с уже существующим Email")
-    void register_shouldReturn429_whenEmailExists() throws Exception {
+    void register_shouldReturn409_whenEmailExists() throws Exception {
         String requestBody = registerRequest.formatted(existingEmail, strongPassword, firstName, lastName);
 
         when(keycloakClient.register(any()))

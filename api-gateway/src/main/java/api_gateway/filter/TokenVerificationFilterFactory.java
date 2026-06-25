@@ -1,5 +1,6 @@
 package api_gateway.filter;
 
+import api_gateway.config.KeycloakProperties;
 import api_gateway.dto.KeycloakUserInfo;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -12,11 +13,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Component
 public class TokenVerificationFilterFactory extends AbstractGatewayFilterFactory<TokenVerificationFilterFactory.Config> {
 
-    private final WebClient keycloakWebClient;
+    private final KeycloakProperties properties;
+    WebClient keycloakWebClient = WebClient.create();
 
-    public TokenVerificationFilterFactory(WebClient keycloakWebClient) {
+    public TokenVerificationFilterFactory(KeycloakProperties properties) {
         super(Config.class);
-        this.keycloakWebClient = keycloakWebClient;
+        this.properties = properties;
     }
 
     @Override
@@ -30,8 +32,8 @@ public class TokenVerificationFilterFactory extends AbstractGatewayFilterFactory
             }
 
             return keycloakWebClient.get()
-                    .uri("/userinfo")
-                    .header(HttpHeaders.AUTHORIZATION, authHeader)
+                    .uri(properties.url())
+                    .headers(headers -> headers.setBearerAuth(authHeader.substring(7)))
                     .retrieve()
                     .bodyToMono(KeycloakUserInfo.class)
                     .flatMap(userInfo -> {
@@ -39,7 +41,6 @@ public class TokenVerificationFilterFactory extends AbstractGatewayFilterFactory
                                 .header("user-id", userInfo.getSub())
                                 .header("user-roles", String.join(",", userInfo.getRoles()))
                                 .build();
-
                         return chain.filter(exchange.mutate().request(modifiedRequest).build());
                     })
                     .onErrorResume(e -> {

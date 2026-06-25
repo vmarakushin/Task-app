@@ -1,6 +1,5 @@
 package auth_service.exception;
 
-import jakarta.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
@@ -13,10 +12,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
 public class AuthExceptionHandler {
+
+    @ExceptionHandler(InvalidUserCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidUserCredentialsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "auth_error", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(KeycloakConfigurationException.class)
+    public ResponseEntity<Map<String, String>> handleKeycloakConfigError(KeycloakConfigurationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "internal_config_error", "message", "Ошибка внутренней аутентификации"));
+    }
 
     @ExceptionHandler(KeycloakException.class)
     public ResponseEntity<ErrorResponse> handleKeycloak(KeycloakException ex) {
@@ -52,18 +66,6 @@ public class AuthExceptionHandler {
                         HttpStatus.CONFLICT.value(),
                         "Conflict",
                         ex.getMessage()
-                ));
-    }
-
-    @ExceptionHandler(NotAuthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleKeycloakUnauthorized(NotAuthorizedException ex) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.UNAUTHORIZED.value(),
-                        "Unauthorized",
-                        "Invalid email or password"
                 ));
     }
 

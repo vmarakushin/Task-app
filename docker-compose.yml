@@ -10,6 +10,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./databases.sql:/docker-entrypoint-initdb.d/databases.sql
+#    ports:
+#      - "5432:5432"
     networks:
       - task-net
     healthcheck:
@@ -24,20 +26,24 @@ services:
     restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CLUSTER_ID: <generated-uuid>
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
       - kafka_data:/apache/kafka
+#    ports:
+#      - "29092:29092"
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list" ]
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -46,8 +52,8 @@ services:
     image: quay.io/keycloak/keycloak:26.2
     command: start-dev --import-realm
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_ENABLED: "true"
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -61,8 +67,8 @@ services:
         condition: service_started
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import
-##    ports:
-##      - "8082:8082"
+    ports:
+      - "8082:8082"
     networks:
       - task-net
 
@@ -71,11 +77,11 @@ services:
       context: .
       dockerfile: task-service/dockerfile
     container_name: task-service
-##    ports:
-##      - "8083:8083"
+#    ports:
+#      - "8083:8083"
     environment:
       DB_URL_ALIAS: postgres
-      KAFKA_URL_ALIAS: postgres
+      KAFKA_URL: kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,13 +95,12 @@ services:
       context: .
       dockerfile: auth-service/dockerfile
     container_name: auth-service
-##    ports:
-##      - "8081:8081"
+#    ports:
+#      - "8081:8081"
     environment:
-      JWT_SECRET: change-me-in-production-use-at-least-256-bit-secret-key!!
       DB_URL_ALIAS: postgres
       KEYCLOAK_URL_ALIAS: keycloak
-      KAFKA_URL_ALIAS: kafka
+      KAFKA_URL: kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,7 +128,6 @@ services:
         condition: service_started
     networks:
       - task-net
-
 
 networks:
   task-net:

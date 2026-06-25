@@ -26,13 +26,13 @@ public class AuthService {
 
     public RegisterResponse register(RegisterRequest request) {
         RegisterResponse response = client.register(request);
+
         kafka.sendUserCreatedFlowEvent(
                 new UserCreatedFlowEvent(response.id(), Instant.now())
         );
-
         kafka.sendUserStreamEvent(
                 new UserStreamEvent(response.id(), response.firstName(), response.lastName())
         );
-        return client.register(request);
+        return response;
     }
 }

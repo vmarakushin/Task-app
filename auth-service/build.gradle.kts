@@ -24,6 +24,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.keycloak:keycloak-admin-client:${keycloakAdminVersion}")

@@ -54,16 +54,5 @@ spring:
           filters:
             - RewritePath=/auth-swagger/(?<segment>.*), /swagger-ui/${segment}
 
-##logging:
-##  level:
-    # Показывает, какой роут совпал с запросом (вы увидите "Route matched: ...")
-##    org.springframework.cloud.gateway: DEBUG
-    # Показывает, как запрос обрабатывается в WebFlux
-##    org.springframework.web.reactive: DEBUG
-    # Показывает детали HTTP-взаимодействий (заголовки, тело запроса/ответа)
-##    org.springframework.http.server.reactive: DEBUG
-    # Логи от Reactor Netty для низкоуровневого трафика
-##    reactor.netty: DEBUG
-
 keycloak:
-  url: http://${KEYCLOAK_URL_ALIAS:localhost}:8082/auth/realms/${REALM:demo}/protocol/openid-connect
+  url: http://${KEYCLOAK_URL_ALIAS:localhost}:8082/realms/${REALM:demo}/protocol/openid-connect/userinfo

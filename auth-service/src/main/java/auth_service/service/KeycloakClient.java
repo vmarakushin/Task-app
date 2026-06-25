@@ -5,17 +5,24 @@ import auth_service.dto.RegisterRequest;
 import auth_service.dto.RegisterResponse;
 import auth_service.dto.TokenResponse;
 import auth_service.exception.ConflictException;
+import auth_service.exception.InvalidUserCredentialsException;
+import auth_service.exception.KeycloakConfigurationException;
 import auth_service.exception.KeycloakException;
-import jakarta.ws.rs.WebApplicationException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -24,10 +31,13 @@ public class KeycloakClient {
 
     private final Keycloak keycloak;
     private final KeycloakProperties props;
+    private final WebClient webClient = WebClient.builder().build();
+    private final String tokenUrl;
 
     public KeycloakClient(KeycloakProperties props, Keycloak keycloak) {
         this.keycloak = keycloak;
         this.props = props;
+        this.tokenUrl = props.url() + "/realms/" + props.realm() + "/protocol/openid-connect/token";
     }
 
     public RegisterResponse register(RegisterRequest input) {
@@ -59,32 +69,71 @@ public class KeycloakClient {
             }
 
             if (status == 409) {
-                throw new ConflictException("User already exists");
+                String body = response.readEntity(String.class);
+                String message = extractErrorMessage(body);
+                throw new ConflictException(message);
             }
 
-            throw new KeycloakException("Keycloak error, status: " + status);
+            String body = response.readEntity(String.class);
+            String message = extractErrorMessage(body);
+            throw new KeycloakException(message);
         }
     }
 
     public TokenResponse login(String email, String password) {
 
-        AccessTokenResponse token;
-        try (Keycloak kc = KeycloakBuilder.builder()
-                .serverUrl(props.url())
-                .realm(props.realm())
-                .clientId(props.clientId())
-                .grantType(OAuth2Constants.PASSWORD)
-                .username(email)
-                .password(password)
-                .build()) {
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("grant_type", "password");
+        formData.add("client_id", props.clientId());
+        formData.add("client_secret", props.clientSecret());
+        formData.add("username", email);
+        formData.add("password", password);
+        formData.add("scope", "openid profile email");
 
-            token = kc.tokenManager().getAccessToken();
+        AccessTokenResponse response = webClient.post()
+                .uri(tokenUrl)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(formData))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                    if (clientResponse.statusCode().value() == 401) {
+                        return Mono.error(new InvalidUserCredentialsException("Неверный логин или пароль"));
+                    }
+                    return Mono.error(new KeycloakConfigurationException("Ошибка настройки backend клиента"));
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
+                        Mono.error(new KeycloakException("Внутренняя ошибка Keycloak")))
+                .bodyToMono(AccessTokenResponse.class)
+                .block();
+
+        if (response == null) {
+            throw new KeycloakException("Не удалось получить токен от Keycloak");
         }
 
         return new TokenResponse(
-                token.getToken(),
-                token.getRefreshToken(),
-                token.getExpiresIn()
+                response.getToken(),
+                response.getRefreshToken(),
+                response.getExpiresIn()
         );
+    }
+
+
+    private String extractErrorMessage(String body) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(body);
+
+            if (node.has("errorMessage")) {
+                return node.get("errorMessage").asText();
+            }
+
+            if (node.has("error")) {
+                return node.get("error").asText();
+            }
+            return body;
+
+        } catch (Exception e) {
+            return body;
+        }
     }
 }

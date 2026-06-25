@@ -15,7 +15,7 @@ public class TaskEventProducer {
 
     private static final String TASK_FLOW_TOPIC = "task-flow";
     private static final String TASK_STREAM_TOPIC = "task-stream";
-    private static final String TASK_ASSIGNED_TOPIC = "task.assigned";
+    private static final String TASK_ASSIGNED_TOPIC = "task-assigned";
 
     public void sendTaskCreated(TaskCreatedFlowEvent event) {
         kafkaTemplate.send(TASK_FLOW_TOPIC, event.id().toString(), event);

@@ -7,12 +7,9 @@ keycloak:
   client-id: auth-service
   client-secret: auth-secret
 
-
-
-
 spring:
   kafka:
-    bootstrap-servers: ${KAFKA_URL_ALIAS:localhost}:9092
+    bootstrap-servers: ${KAFKA_URL:localhost:29092}
     producer:
       acks: all
       retries: 3

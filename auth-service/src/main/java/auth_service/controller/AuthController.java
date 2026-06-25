@@ -1,6 +1,9 @@
 package auth_service.controller;
 
-import auth_service.dto.*;
+import auth_service.dto.LoginRequest;
+import auth_service.dto.RegisterRequest;
+import auth_service.dto.RegisterResponse;
+import auth_service.dto.TokenResponse;
 import auth_service.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,5 +1,5 @@
 # Task Service
-### Версия 3.0
+### Версия 3.01
 
 ---
 Task Service — backend приложение для управления задачами с поддержкой:
@@ -34,15 +34,18 @@ Task Service — backend приложение для управления зад
 - смена статуса задаче
 
 # Отправка событий в Kafka
-При создании задачи и назначении исполнителя происходит отправка события в task.created и task.assigned топики соответственно
-
+- Создание задачи - task-stream и task-flow топики
+- Назначение исполнителя - task-assigned топик
+- Создание юзера - user-stream и user-flow
 ---
-
 # Запуск
-Запустите docker-compose в корне проекта, на этом всё
+- Запустите docker-compose в корне проекта
+- Выдайте клиенту "auth-service" в realm "demo" account service role "manage users"
 
 # Порты
 ## 8080 - основное приложение
+## 8082 - keycloak панель(admin/admin)
+# API
 ### POST /registration - Регистрация
 {
 "email":"vasilisk@mail.ru",
@@ -56,8 +59,15 @@ Task Service — backend приложение для управления зад
 "password":"K9#vT2!mQ8@xL7$wR4^nP1&z"
 }
 ### /api/tasks/ - API задач
+POST 
+{
+"title": "NewOne",
+"description": "somedescription"
+}
 
 # История версий
+### 3.01
+- Доведено до ума, работает (у меня)
 ### 3.0
 - В качестве провайдера авторизации подключен Keycloak
 - Проверка авторизации выведена на Api Gateway

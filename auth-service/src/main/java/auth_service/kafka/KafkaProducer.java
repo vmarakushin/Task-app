@@ -24,5 +24,4 @@ public class KafkaProducer {
     public void sendUserStreamEvent(UserStreamEvent event) {
         kafkaTemplate.send(USER_STREAM_TOPIC, event.id(), event);
     }
-
 }
