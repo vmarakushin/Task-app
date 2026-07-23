@@ -3,6 +3,8 @@ package task_service.data.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import task_service.data.model.Status;
 
+import java.util.UUID;
+
 public record TaskResponse(
 
         @Schema(
@@ -28,7 +30,7 @@ public record TaskResponse(
         @Schema(
                 description = "(При наличии) Id исполнителя"
         )
-        Long workerId,
+        UUID workerId,
 
         @Schema(
                 description = "(При наличии) Имя исполнителя"

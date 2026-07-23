@@ -31,7 +31,7 @@ public class AuthService {
                 new UserCreatedFlowEvent(response.id(), Instant.now())
         );
         kafka.sendUserStreamEvent(
-                new UserStreamEvent(response.id(), response.firstName(), response.lastName())
+                new UserStreamEvent(response.id(), response.firstName(), response.lastName(), response.email())
         );
         return response;
     }

@@ -1,0 +1,55 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${ACCOUNTING_DB_HOST:localhost}:${ACCOUNTING_DB_PORT:5434}/${ACCOUNTING_DB_NAME:accounting_service}
+    username: ${ACCOUNTING_DB_USER:postgres}
+    password: ${ACCOUNTING_DB_PASSWORD:postgres}
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:29092}
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+
+    consumer:
+      group-id: accounting-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "auth_service.*,task_service.*"
+
+    listener:
+      ack-mode: manual_immediate
+
+server:
+  port: ${ACCOUNTING_SERVICE_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: "Accounting Service"
+
+payment:
+  task-amount: ${ACCOUNTING_PAYMENT_AMOUNT:1000.00}
+  cron: ${ACCOUNTING_PAYMENT_CRON:0 0 0 */14 * *}
+  outbox:
+    batch-size: ${ACCOUNTING_OUTBOX_BATCH_SIZE:100}
+    interval-sec: ${ACCOUNTING_OUTBOX_INTERVAL_SEC:60}

@@ -19,12 +19,12 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class KeycloakClient {
@@ -65,7 +65,7 @@ public class KeycloakClient {
                 String location = response.getLocation().toString();
                 String id = location.substring(location.lastIndexOf('/') + 1);
 
-                return new RegisterResponse(id, input.firstName(), input.lastName());
+                return new RegisterResponse(UUID.fromString(id), input.firstName(), input.lastName(), input.email());
             }
 
             if (status == 409) {

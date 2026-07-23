@@ -1,6 +1,7 @@
 package task_service.kafka;
 
 import task_service.data.dto.TaskCreatedFlowEvent;
+import task_service.data.dto.TaskFinishedFlowEvent;
 import task_service.data.dto.TaskStreamEvent;
 import task_service.data.dto.WorkerAssignedEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,17 @@ public class TaskEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onTaskCreated(TaskStreamEvent event) {
-        producer.sendTaskCreated(event);
+    public void onTaskEvent(TaskStreamEvent event) {
+        producer.sendTaskStream(event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onWorkerAssigned(WorkerAssignedEvent event) {
         producer.sendWorkerAssigned(event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onTaskFinished(TaskFinishedFlowEvent event) {
+        producer.sendTaskFinished(event);
     }
 }

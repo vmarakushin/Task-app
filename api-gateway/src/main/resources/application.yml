@@ -10,49 +10,32 @@ spring:
         wiretap: true
       routes:
         - id: auth_route
-          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
+          uri: http://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_PORT:8081}
           predicates:
             - Path=/registration, /login
           filters:
             - RewritePath=/(?<segment>.*), /api/auth/$\{segment}
 
         - id: task_route
-          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
+          uri: http://${TASK_SERVICE_HOST:localhost}:${TASK_SERVICE_PORT:8083}
           predicates:
             - Path=/api/tasks/**
           filters:
             - TokenVerificationFilterFactory
 
-        - id: auth-actuator
-          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
+        - id: accounting-route
+          uri: http://${ACCOUNTING_SERVICE_HOST:localhost}:${ACCOUNTING_SERVICE_PORT:8084}
           predicates:
-            - Path=/auth-actuator/**
+            - Path=/api/balance/**
           filters:
-            - RewritePath=/auth-actuator/(?<segment>.*), /actuator/${segment}
             - TokenVerificationFilterFactory
 
-        - id: task-actuator
-          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
+        - id: search-route
+          uri: http://${SEARCH_SERVICE_HOST:localhost}:${SEARCH_SERVICE_PORT:8085}
           predicates:
-            - Path=/task-actuator/**
+            - Path=/api/search/**
           filters:
-            - RewritePath=/task-actuator/(?<segment>.*), /actuator/${segment}
             - TokenVerificationFilterFactory
-
-        - id: task-swagger
-          uri: http://${TASK_SERVICE_URL_ALIAS:localhost}:8083
-          predicates:
-            - Path=/task-swagger/**
-          filters:
-            - RewritePath=/task-swagger/(?<segment>.*), /swagger-ui/${segment}
-            - TokenVerificationFilterFactory
-
-        - id: auth-swagger
-          uri: http://${AUTH_SERVICE_URL_ALIAS:localhost}:8081
-          predicates:
-            - Path=/auth-swagger/**
-          filters:
-            - RewritePath=/auth-swagger/(?<segment>.*), /swagger-ui/${segment}
 
 keycloak:
-  url: http://${KEYCLOAK_URL_ALIAS:localhost}:8082/realms/${REALM:demo}/protocol/openid-connect/userinfo
+  url: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8082}/realms/${REALM:demo}/protocol/openid-connect/userinfo

@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import task_service.service.TaskService;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
@@ -43,7 +45,7 @@ public class TaskController {
     @Operation(summary = "Назначить исполнителя задачи")
     public TaskResponse setExecutor(
             @PathVariable Long taskId,
-            @RequestParam Long workerId
+            @RequestParam UUID workerId
     ) {
         return taskService.setExecutor(taskId, workerId);
     }

@@ -4,6 +4,9 @@ import task_service.data.dto.*;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
+import task_service.exception.FinishedTaskException;
+import task_service.exception.IllegalStatusSequenceException;
+import task_service.exception.NoWorkerException;
 import task_service.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,6 +19,7 @@ import task_service.repository.TaskRepository;
 import task_service.repository.WorkerRepository;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +71,7 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse setExecutor(Long taskId, Long executorId) {
+    public TaskResponse setExecutor(Long taskId, UUID executorId) {
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException(
@@ -79,10 +83,17 @@ public class TaskService {
                         Messages.WORKER_NOT_FOUND.format(executorId)
                 ));
 
+        if (task.getStatus() == Status.FINISHED) {
+            throw new FinishedTaskException(Messages.WORKER_CANNOT_BE_ASSIGNED_IF_TASK_IS_FINISHED.format(executorId, taskId));
+        }
+
         task.setExecutor(newWorker);
 
         eventPublisher.publishEvent(
-                new WorkerAssignedEvent(task.getId(), newWorker.getId())
+                new WorkerAssignedEvent(task.getId(), task.getExecutor().getId())
+        );
+        eventPublisher.publishEvent(
+                new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
         );
         return mapToResponse(task);
     }
@@ -95,13 +106,32 @@ public class TaskService {
                         Messages.TASK_NOT_FOUND.format(taskId)
                 ));
 
+        if (task.getExecutor() == null) {
+            throw new NoWorkerException(
+                    Messages.WORKER_SHOULD_BE_ASSIGNED.text()
+            );
+        }
+
         if (!task.getStatus().canMoveTo(status)) {
-            throw new IllegalStateException(
+            throw new IllegalStatusSequenceException(
                     Messages.ILLEGAL_TASK_STATUS_SEQUENCE.format(taskId, status, task.getStatus())
             );
         }
 
         task.setStatus(status);
+
+        if (task.getStatus() == Status.FINISHED) {
+            eventPublisher.publishEvent(
+                    new TaskFinishedFlowEvent(task.getId(), Instant.now())
+            );
+            eventPublisher.publishEvent(
+                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
+            );
+        } else {
+            eventPublisher.publishEvent(
+                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
+            );
+        }
         return mapToResponse(task);
     }
 

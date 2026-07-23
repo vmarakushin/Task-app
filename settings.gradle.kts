@@ -13,5 +13,7 @@ rootProject.name = "TaskManagerTest"
 include(
     "task-service",
     "auth-service",
-    "api-gateway"
+    "api-gateway",
+    "accounting-service",
+    "search-service"
 )

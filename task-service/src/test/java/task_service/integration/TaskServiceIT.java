@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,6 +48,8 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     private Task taskNew;
 
     private Task taskFinished;
+
+    private UUID worker1uuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private static Consumer<String, TaskCreatedFlowEvent> consumer;
 
@@ -77,6 +80,7 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
         worker = workerRepository.save(
                 Worker.builder()
+                        .id(worker1uuid)
                         .name("Stas")
                         .email("stas@gmail.com")
                         .build()

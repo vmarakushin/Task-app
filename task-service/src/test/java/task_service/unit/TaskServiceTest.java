@@ -8,6 +8,7 @@ import task_service.data.dto.WorkerAssignedEvent;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
+import task_service.exception.NoWorkerException;
 import task_service.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,7 @@ import task_service.service.TaskService;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -150,8 +152,10 @@ class TaskServiceTest {
     @DisplayName("Изменение исполнителя задачи - успех")
     void setExecutor_shouldAssignWorker() {
 
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
         Worker worker = Worker.builder()
-                .id(10L)
+                .id(workerId)
                 .name("Vlad")
                 .email("vlad@test.com")
                 .build();
@@ -166,16 +170,16 @@ class TaskServiceTest {
         when(taskRepository.findById(1L))
                 .thenReturn(Optional.of(task));
 
-        when(workerRepository.findById(10L))
+        when(workerRepository.findById(workerId))
                 .thenReturn(Optional.of(worker));
 
-        TaskResponse result = taskService.setExecutor(1L, 10L);
+        TaskResponse result = taskService.setExecutor(1L, workerId);
 
         assertEquals(worker.getId(), result.workerId());
         assertEquals(worker.getName(), result.workerName());
 
         verify(taskRepository).findById(1L);
-        verify(workerRepository).findById(10L);
+        verify(workerRepository).findById(workerId);
 
         ArgumentCaptor<WorkerAssignedEvent> captor =
                 ArgumentCaptor.forClass(WorkerAssignedEvent.class);
@@ -192,23 +196,27 @@ class TaskServiceTest {
     @DisplayName("Изменение исполнителя задачи - задача не найдена")
     void setExecutor_shouldThrowWhenTaskNotFound() {
 
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
         when(taskRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
         assertThrows(
                 NotFoundException.class,
-                () -> taskService.setExecutor(1L, 10L)
+                () -> taskService.setExecutor(1L, workerId)
         );
 
         verify(taskRepository).findById(1L);
 
         verify(workerRepository, never())
-                .findById(anyLong());
+                .findById(any(UUID.class));
     }
 
     @Test
     @DisplayName("Изменение исполнителя задачи - исполнитель не найден")
     void setExecutor_shouldThrowWhenWorkerNotFound() {
+
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Task task = Task.builder()
                 .id(1L)
@@ -220,27 +228,36 @@ class TaskServiceTest {
         when(taskRepository.findById(1L))
                 .thenReturn(Optional.of(task));
 
-        when(workerRepository.findById(10L))
+        when(workerRepository.findById(workerId))
                 .thenReturn(Optional.empty());
 
         assertThrows(
                 NotFoundException.class,
-                () -> taskService.setExecutor(1L, 10L)
+                () -> taskService.setExecutor(1L, workerId)
         );
 
         verify(taskRepository).findById(1L);
-        verify(workerRepository).findById(10L);
+        verify(workerRepository).findById(workerId);
     }
 
     @Test
     @DisplayName("Обновление статуса задачи - успех")
     void setStatus_shouldUpdateStatus() {
 
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        Worker worker = Worker.builder()
+                .id(workerId)
+                .email("user@mail.com")
+                .name("User")
+                .build();
+
         Task task = Task.builder()
                 .id(1L)
                 .title("Task")
                 .description("Description")
                 .status(Status.NEW)
+                .executor(worker)
                 .build();
 
         when(taskRepository.findById(1L))
@@ -273,11 +290,20 @@ class TaskServiceTest {
     @DisplayName("Изменение статуса задачи - неправильный порядок статусов")
     void setStatus_shouldThrowWhenTransitionIsInvalid() {
 
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        Worker worker = Worker.builder()
+                .id(workerId)
+                .email("user@mail.com")
+                .name("User")
+                .build();
+
         Task task = Task.builder()
                 .id(1L)
                 .title("Task")
                 .description("Description")
                 .status(Status.FINISHED)
+                .executor(worker)
                 .build();
 
         when(taskRepository.findById(1L))
@@ -289,5 +315,28 @@ class TaskServiceTest {
         );
 
         verify(taskRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Изменение статуса задачи - отсутствие исполнителя")
+    void setStatus_shouldThrow_ifWorkerNotAssigned() {
+
+        Task task = Task.builder()
+                .id(1L)
+                .title("No executor")
+                .description("Who should do this?")
+                .status(Status.NEW)
+                .build();
+
+        when(taskRepository.findById(1L))
+                .thenReturn(Optional.of(task));
+
+        assertThrows(
+                NoWorkerException.class,
+                () -> taskService.setStatus(
+                        1L,
+                        Status.IN_PROGRESS
+                )
+        );
     }
 }

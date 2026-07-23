@@ -4,6 +4,7 @@ import auth_service.AbstractIntegrationTest;
 import auth_service.dto.RegisterResponse;
 import auth_service.dto.TokenResponse;
 import auth_service.exception.ConflictException;
+import auth_service.exception.InvalidUserCredentialsException;
 import auth_service.service.KeycloakClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -36,7 +39,7 @@ public class AuthControllerTest extends AbstractIntegrationTest {
 
     private static String strongPassword = "1-vvUN024!#&bnwgJJf";
 
-    private static String uuid = "550e8400-e29b-41d4-a716-446655440000";
+    private static UUID uuid = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     private static String firstName = "Ivan";
 
@@ -55,12 +58,12 @@ public class AuthControllerTest extends AbstractIntegrationTest {
                         }
                        """;
 
-    String loginRequest = """
-             {
-             "email": "%s",
-             "password": "%s"
-             }
-             """;
+    String loginRequest =     """
+                       {
+                        "email": "%s",
+                        "password": "%s"
+                        }
+                       """;
 
 
     @Test
@@ -85,14 +88,14 @@ public class AuthControllerTest extends AbstractIntegrationTest {
         String requestBody = registerRequest.formatted(newEmail, strongPassword, firstName, lastName);
 
         when(keycloakClient.register(any()))
-                .thenReturn(new RegisterResponse(uuid, firstName, lastName));
+                .thenReturn(new RegisterResponse(uuid, firstName, lastName, newEmail));
 
         mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/registration")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(uuid))
+                .andExpect(jsonPath("$.id").value(uuid.toString()))
                 .andExpect(jsonPath("$.firstName").value(firstName))
                 .andExpect(jsonPath("$.lastName").value(lastName));
     }
@@ -103,7 +106,7 @@ public class AuthControllerTest extends AbstractIntegrationTest {
         String requestBody = loginRequest.formatted(newEmail, strongPassword);
 
         when(keycloakClient.login(newEmail, strongPassword))
-                .thenThrow(jakarta.ws.rs.NotAuthorizedException.class);
+                .thenThrow(InvalidUserCredentialsException.class);
 
         mockMvc.perform(
                 MockMvcRequestBuilders.post("/api/auth/login")

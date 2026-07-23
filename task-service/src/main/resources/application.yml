@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_URL_ALIAS:localhost}:5432/task_service
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${TASK_DB_HOST:localhost}:${TASK_DB_PORT:5432}/${TASK_DB_NAME:task_service}
+    username: ${TASK_DB_USER:postgres}
+    password: ${TASK_DB_PASSWORD:postgres}
   flyway:
     enabled: true
   jpa:
@@ -10,7 +10,7 @@ spring:
       ddl-auto: validate
 
   kafka:
-    bootstrap-servers: ${KAFKA_URL:localhost:29092}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:29092}
     producer:
       acks: all
       retries: 3
@@ -19,8 +19,20 @@ spring:
       properties:
         enable.idempotence: true
 
+    consumer:
+      group-id: task-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "auth_service.*"
+
+    listener:
+      ack-mode: manual_immediate
+
 server:
-  port: 8083
+  port: ${TASK_SERVICE_PORT:8083}
 
 management:
   endpoints:

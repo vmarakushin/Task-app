@@ -1,2 +1,0 @@
-CREATE DATABASE task_service;
-CREATE DATABASE keycloak;

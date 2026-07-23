@@ -31,4 +31,12 @@ public class TaskTopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic taskFinishedFlowTopic() {
+        return TopicBuilder.name("task-finished-flow")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }

@@ -1,8 +1,11 @@
 package auth_service.event.user;
 
+import java.util.UUID;
+
 public record UserStreamEvent(
-        String id,
+        UUID id,
         String firstName,
-        String lastName
+        String lastName,
+        String email
 ) {
 }

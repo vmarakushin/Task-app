@@ -1,15 +1,15 @@
 services:
 
-  postgres:
+  task-db:
     image: postgres:16
-    container_name: postgres
+    container_name: "${TASK_DB_HOST:-task-db}"
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: "${TASK_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${TASK_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "${TASK_DB_NAME:-task_service}"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./databases.sql:/docker-entrypoint-initdb.d/databases.sql
+      - task_postgres_data:/var/lib/postgresql/data
 #    ports:
 #      - "5432:5432"
     networks:
@@ -20,9 +20,69 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak-db:
+    image: postgres:16
+    container_name: "${KEYCLOAK_DB_HOST:-keycloak-db}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${KEYCLOAK_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "${KEYCLOAK_DB_NAME:-keycloak}"
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+#    ports:
+#      - "5433:5432"
+    networks:
+      - task-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  accounting-db:
+    image: postgres:16
+    container_name: "${ACCOUNTING_DB_HOST:-accounting-db}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${ACCOUNTING_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${ACCOUNTING_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "${ACCOUNTING_DB_NAME:-accounting_service}"
+    volumes:
+      - accounting_postgres_data:/var/lib/postgresql/data
+#    ports:
+#      - "5434:5432"
+    networks:
+      - task-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  search-db:
+    image: postgres:16
+    container_name: "${SEARCH_DB_HOST:-search-db}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${SEARCH_DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${SEARCH_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: "${SEARCH_DB_NAME:-search_service}"
+    volumes:
+      - search_postgres_data:/var/lib/postgresql/data
+#    ports:
+#      - "5435:5432"
+    networks:
+      - task-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   kafka:
     image: apache/kafka:3.7.0
-    container_name: kafka
+    container_name: "${KAFKA_HOST:-kafka}"
     restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
@@ -50,25 +110,26 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2
+    container_name: "${KEYCLOAK_HOST:-keycloak}"
     command: start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HTTP_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: "${KEYCLOAK_ADMIN_USERNAME:-admin}"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
+      KC_HTTP_ENABLED: true
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: postgres
-      KC_HTTP_PORT: 8082
+      KC_DB_URL: "jdbc:postgresql://${KEYCLOAK_DB_HOST:-keycloak-db}:${KEYCLOAK_DB_PORT:-5432}/${KEYCLOAK_DB_NAME:-keycloak}"
+      KC_DB_USERNAME: "${KEYCLOAK_DB_USER:-postgres}"
+      KC_DB_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-postgres}"
+      KC_HTTP_PORT: "${KEYCLOAK_PORT:-8080}"
     depends_on:
-      postgres:
+      keycloak-db:
         condition: service_healthy
       kafka:
         condition: service_started
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import
-    ports:
-      - "8082:8082"
+#    ports:
+#      - "8082:8080"
     networks:
       - task-net
 
@@ -76,14 +137,20 @@ services:
     build:
       context: .
       dockerfile: task-service/dockerfile
-    container_name: task-service
+    container_name: "${TASK_SERVICE_HOST:-task-service}"
 #    ports:
-#      - "8083:8083"
+#      - "8083:8080"
     environment:
-      DB_URL_ALIAS: postgres
-      KAFKA_URL: kafka:9092
+      TASK_DB_HOST: "${TASK_DB_HOST:-task-db}"
+      TASK_DB_PORT: "${TASK_DB_PORT:-5432}"
+      TASK_DB_NAME: "${TASK_DB_NAME:-task_service}"
+      TASK_DB_USER: "${TASK_DB_USER:-postgres}"
+      TASK_DB_PASSWORD: "${TASK_DB_PASSWORD:-postgres}"
+      TASK_SERVICE_PORT: "${TASK_SERVICE_PORT:-8080}"
+      KAFKA_HOST: "${KAFKA_HOST:-kafka}"
+      KAFKA_PORT: "${KAFKA_PORT:-9092}"
     depends_on:
-      postgres:
+      task-db:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -94,17 +161,70 @@ services:
     build:
       context: .
       dockerfile: auth-service/dockerfile
-    container_name: auth-service
+    container_name: "${AUTH_SERVICE_HOST:-auth-service}"
 #    ports:
-#      - "8081:8081"
+#      - "8081:8080"
     environment:
-      DB_URL_ALIAS: postgres
-      KEYCLOAK_URL_ALIAS: keycloak
-      KAFKA_URL: kafka:9092
+      AUTH_SERVICE_PORT: "${AUTH_SERVICE_PORT:-8080}"
+      KEYCLOAK_HOST: "${KEYCLOAK_HOST:-keycloak}"
+      KEYCLOAK_PORT: "${KEYCLOAK_PORT:-8080}"
+      KAFKA_HOST: "${KAFKA_HOST:-kafka}"
+      KAFKA_PORT: "${KAFKA_PORT:-9092}"
+      REALM: "${REALM:-demo}"
     depends_on:
-      postgres:
-        condition: service_healthy
       task-service:
+        condition: service_started
+    networks:
+      - task-net
+
+  accounting-service:
+    build:
+      context: .
+      dockerfile: accounting-service/dockerfile
+    container_name: "${ACCOUNTING_SERVICE_HOST:-accounting-service}"
+#    ports:
+#      - "8084:8080"
+    environment:
+      ACCOUNTING_DB_HOST: "${ACCOUNTING_DB_HOST:-accounting-db}"
+      ACCOUNTING_DB_PORT: "${ACCOUNTING_DB_PORT:-5432}"
+      ACCOUNTING_DB_NAME: "${ACCOUNTING_DB_NAME:-accounting_service}"
+      ACCOUNTING_DB_USER: "${ACCOUNTING_DB_USER:-postgres}"
+      ACCOUNTING_DB_PASSWORD: "${ACCOUNTING_DB_PASSWORD:-postgres}"
+      ACCOUNTING_SERVICE_PORT: "${ACCOUNTING_SERVICE_PORT:-8080}"
+      KAFKA_HOST: "${KAFKA_HOST:-kafka}"
+      KAFKA_PORT: "${KAFKA_PORT:-9092}"
+      ACCOUNTING_PAYMENT_AMOUNT: "${ACCOUNTING_PAYMENT_AMOUNT:-1000.00}"
+      ACCOUNTING_PAYMENT_CRON: "${ACCOUNTING_PAYMENT_CRON:-0 0 0 */14 * *}"
+      ACCOUNTING_OUTBOX_BATCH_SIZE: "${ACCOUNTING_OUTBOX_BATCH_SIZE:-100}"
+      ACCOUNTING_OUTBOX_INTERVAL_SEC: "${ACCOUNTING_OUTBOX_INTERVAL_SEC:-60}"
+    depends_on:
+      accounting-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - task-net
+
+  search-service:
+    build:
+      context: .
+      dockerfile: search-service/dockerfile
+    container_name: "${SEARCH_SERVICE_HOST:-search-service}"
+#    ports:
+#      - "8085:8080"
+    environment:
+      SEARCH_DB_HOST: "${SEARCH_DB_HOST:-search-db}"
+      SEARCH_DB_PORT: "${SEARCH_DB_PORT:-5432}"
+      SEARCH_DB_NAME: "${SEARCH_DB_NAME:-search_service}"
+      SEARCH_DB_USER: "${SEARCH_DB_USER:-postgres}"
+      SEARCH_DB_PASSWORD: "${SEACRH_DB_PASSWORD:-postgres}"
+      SEARCH_SERVICE_PORT: "${SEARCH_SERVICE_PORT:-8080}"
+      KAFKA_HOST: "${KAFKA_HOST:-kafka}"
+      KAFKA_PORT: "${KAFKA_PORT:-9092}"
+    depends_on:
+      accounting-db:
+        condition: service_healthy
+      kafka:
         condition: service_started
     networks:
       - task-net
@@ -117,10 +237,17 @@ services:
     ports:
       - "8080:8080"
     environment:
-      AUTH_SERVICE_URL_ALIAS: auth-service
-      TASK_SERVICE_URL_ALIAS: task-service
-      KEYCLOAK_URL_ALIAS: keycloak
-      REALM: demo
+      AUTH_SERVICE_HOST: "${AUTH_SERVICE_HOST:-auth-service}"
+      AUTH_SERVICE_PORT: "${AUTH_SERVICE_PORT:-8080}"
+      TASK_SERVICE_HOST: "${TASK_SERVICE_HOST:-task-service}"
+      TASK_SERVICE_PORT: "${TASK_SERVICE_PORT:-8080}"
+      ACCOUNTING_SERVICE_HOST: "${ACCOUNTING_SERVICE_HOST:-accounting-service}"
+      ACCOUNTING_SERVICE_PORT: "${ACCOUNTING_SERVICE_PORT:-8080}"
+      SEARCH_SERVICE_HOST: "${SEARCH_SERVICE_HOST:-search-service}"
+      SEARCH_SERVICE_PORT: "${SEARCH_SERVICE_PORT:-8080}"
+      KEYCLOAK_HOST: "${KEYCLOAK_HOST:-keycloak}"
+      KEYCLOAK_PORT: "${KEYCLOAK_PORT:-8080}"
+      REALM: "${REALM:-demo}"
     depends_on:
       auth-service:
         condition: service_started
@@ -133,5 +260,8 @@ networks:
   task-net:
 
 volumes:
-  postgres_data:
+  task_postgres_data:
+  keycloak_postgres_data:
   kafka_data:
+  accounting_postgres_data:
+  search_postgres_data:

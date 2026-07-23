@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @RestControllerAdvice
@@ -21,8 +21,8 @@ public class AuthExceptionHandler {
     @ExceptionHandler(InvalidUserCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidUserCredentialsException ex) {
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", "auth_error", "message", ex.getMessage()));
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "auth_error", "message", Objects.requireNonNullElse(ex.getMessage(), "Invalid user credentials")));
     }
 
     @ExceptionHandler(KeycloakConfigurationException.class)
@@ -34,7 +34,7 @@ public class AuthExceptionHandler {
 
     @ExceptionHandler(KeycloakException.class)
     public ResponseEntity<ErrorResponse> handleKeycloak(KeycloakException ex) {
-        log.warn(Arrays.toString(ex.getStackTrace()));
+        log.error("Keycloak exception", ex);
         return ResponseEntity
                 .status(HttpStatus.BAD_GATEWAY)
                 .body(new ErrorResponse(

@@ -48,7 +48,7 @@ public class KafkaTest extends AbstractIntegrationTest {
 
     private static String strongPassword = "1-vvUN024!#&bnwgJJf";
 
-    private static String uuid = "550e8400-e29b-41d4-a716-446655440000";
+    private static UUID uuid = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     private static String firstName = "Ivan";
 
@@ -83,7 +83,7 @@ public class KafkaTest extends AbstractIntegrationTest {
     @DisplayName("Проверка отправки в user-flow")
     void register_shouldPushToKafka_userFlow(){
         when(keycloakClient.register(any()))
-                .thenReturn(new RegisterResponse(uuid, firstName, lastName));
+                .thenReturn(new RegisterResponse(uuid, firstName, lastName, existingEmail));
 
         authService.register(new RegisterRequest(existingEmail, strongPassword, firstName, lastName));
 
@@ -102,7 +102,7 @@ public class KafkaTest extends AbstractIntegrationTest {
     @DisplayName("Проверка отправки в user-stream")
     void register_shouldPushToKafka_userStream(){
         when(keycloakClient.register(any()))
-                .thenReturn(new RegisterResponse(uuid, firstName, lastName));
+                .thenReturn(new RegisterResponse(uuid, firstName, lastName, existingEmail));
 
         authService.register(new RegisterRequest(existingEmail, strongPassword, firstName, lastName));
 

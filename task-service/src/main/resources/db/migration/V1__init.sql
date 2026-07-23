@@ -1,7 +1,7 @@
 CREATE TABLE workers (
-                       id         BIGSERIAL     PRIMARY KEY,
-                       name       VARCHAR(255)  NOT NULL,
-                       email      VARCHAR(255)  UNIQUE NOT NULL
+                       id          UUID         PRIMARY KEY,
+                       name        VARCHAR(255) NOT NULL,
+                       email       VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE tasks (
@@ -9,7 +9,7 @@ CREATE TABLE tasks (
                        title       VARCHAR(255) NOT NULL,
                        description TEXT,
                        status      VARCHAR(50)  NOT NULL,
-                       worker_id   BIGINT,
+                       worker_id   UUID,
 
                        CONSTRAINT fk_tasks_worker
                            FOREIGN KEY (worker_id)

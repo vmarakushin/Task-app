@@ -18,6 +18,8 @@ public class TaskServiceExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
 
+        log.debug(ex.getMessage());
+
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -27,6 +29,57 @@ public class TaskServiceExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(NoWorkerException.class)
+    public ResponseEntity<ErrorResponse> handleNoWorker(NoWorkerException ex) {
+
+        log.debug(ex.getMessage());
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "No worker assigned",
+                ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(IllegalStatusSequenceException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStatusSequence(IllegalStatusSequenceException ex) {
+
+        log.debug(ex.getMessage());
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Illegal status sequence",
+                ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(FinishedTaskException.class)
+    public ResponseEntity<ErrorResponse> handleTaskFinished(FinishedTaskException ex) {
+
+        log.debug(ex.getMessage());
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "An attempt to change worker of finished task",
+                ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(response);
     }
 

@@ -19,6 +19,8 @@ import task_service.data.model.Worker;
 import task_service.repository.TaskRepository;
 import task_service.repository.WorkerRepository;
 
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,11 +49,18 @@ public class TaskControllerIT extends AbstractIntegrationTest {
 
     private Task taskFinished;
 
+    private Task newTaskWithoutExecutor;
+
+    private UUID worker1uuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+    private UUID worker2uuid = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
     @BeforeEach
     void setUp() {
 
         worker = workerRepository.save(
                 Worker.builder()
+                        .id(worker1uuid)
                         .name("Stas")
                         .email("stas@gmail.com")
                         .build()
@@ -59,6 +68,7 @@ public class TaskControllerIT extends AbstractIntegrationTest {
 
         worker2 = workerRepository.save(
                 Worker.builder()
+                        .id(worker2uuid)
                         .name("Andrey")
                         .email("andrey@gmail.com")
                         .build()
@@ -79,6 +89,14 @@ public class TaskControllerIT extends AbstractIntegrationTest {
                         .description("Another description")
                         .status(Status.FINISHED)
                         .executor(worker)
+                        .build()
+        );
+
+        newTaskWithoutExecutor = taskRepository.save(
+                Task.builder()
+                        .title("No executor")
+                        .description("Who should do this?")
+                        .status(Status.NEW)
                         .build()
         );
     }
@@ -105,12 +123,12 @@ public class TaskControllerIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Получение задачи по id")
     void getById_shouldReturnTask() throws Exception {
-        String template = String.format("/api/tasks/%d", worker.getId());
+        String template = String.format("/api/tasks/%d", taskNew.getId());
         mockMvc.perform(
                         get(template)
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(worker.getId()))
+                .andExpect(jsonPath("$.id").value(taskNew.getId()))
                 .andExpect(jsonPath("$.title").value("Need to be fixed"));
     }
 
@@ -153,7 +171,7 @@ public class TaskControllerIT extends AbstractIntegrationTest {
                                 .param("workerId", worker2.getId().toString())
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.workerId").value(worker2.getId()))
+                .andExpect(jsonPath("$.workerId").value(worker2.getId().toString()))
                 .andExpect(jsonPath("$.workerName").value("Andrey"));
     }
 
@@ -168,5 +186,16 @@ public class TaskControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.title").value("Need to be fixed"));
+    }
+
+    @Test
+    @DisplayName("Изменение статуса без исполнителя - ждём 409")
+    void setStatus_shouldReturn409_whenTaskHasNoExecutor() throws Exception {
+        String template = String.format("/api/tasks/%d/status", newTaskWithoutExecutor.getId());
+        mockMvc.perform(
+                        patch(template)
+                                .param("status", "IN_PROGRESS")
+                )
+                .andExpect(status().isConflict());
     }
 }
