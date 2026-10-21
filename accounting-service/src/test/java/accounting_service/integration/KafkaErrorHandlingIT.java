@@ -2,6 +2,7 @@ package accounting_service.integration;
 
 import accounting_service.AbstractIntegrationTest;
 import accounting_service.repository.BalanceRepository;
+import accounting_service.repository.JobRepository;
 import accounting_service.service.AccountingKafkaHandler;
 import events.Topics;
 import events.task.WorkerAssignedEvent;
@@ -16,6 +17,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,11 +61,21 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
     @Autowired
     private BalanceRepository balanceRepository;
 
+    @Autowired
+    private JobRepository jobRepository;
+
     @SpyBean
     private AccountingKafkaHandler handler;
 
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
+
+    /** Балансы и job создают хендлеры по событиям - убираем, чтобы не мешать другим тестовым классам. */
+    @AfterEach
+    void tearDown() {
+        jobRepository.deleteAll();
+        balanceRepository.deleteAll();
+    }
 
     @Test
     @DisplayName("Временная ошибка: сообщение обрабатывается повторно и не теряется")
