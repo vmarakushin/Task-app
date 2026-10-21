@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 
 @Configuration
 @EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
@@ -21,5 +22,14 @@ public class SchedulerConfig {
                         .usingDbTime()
                         .build()
         );
+    }
+
+    /**
+     * Часы в часовом поясе JVM (в Docker задаётся переменной TZ).
+     * Отдельный бин нужен, чтобы в тестах подставлять фиксированную дату.
+     */
+    @Bean
+    public Clock clock() {
+        return Clock.systemDefaultZone();
     }
 }

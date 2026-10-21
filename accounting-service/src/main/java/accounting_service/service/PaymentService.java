@@ -16,16 +16,15 @@ public class PaymentService {
     private final PaymentProperties properties;
     private final PaymentEventOutboxProcessor processor;
 
+    /**
+     * Без try/catch: исключение откатит транзакцию и будет залогировано планировщиком.
+     * Внутри @Transactional перехват только маскировал ошибку - транзакция всё равно
+     * помечалась rollback-only, а при коммите вылетал UnexpectedRollbackException.
+     */
     @Transactional
     public void processPayments() {
-        try {
-            int count = paymentRepository.createPayments(
-                    properties.taskAmount()
-            );
-            log.info("Created {} payments", count);
-        } catch (Exception e) {
-            log.error("An error occurred while processing payday: ", e);
-        }
+        int count = paymentRepository.createPayments(properties.taskAmount());
+        log.info("Created {} payments", count);
     }
 
     public void sendPaymentsToKafka() {

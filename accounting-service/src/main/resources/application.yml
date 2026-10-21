@@ -49,7 +49,9 @@ info:
 
 payment:
   task-amount: ${ACCOUNTING_PAYMENT_AMOUNT:1000.00}
-  cron: ${ACCOUNTING_PAYMENT_CRON:0 0 0 */14 * *}
+  payout:
+    cron: ${ACCOUNTING_PAYOUT_CRON:0 0 0 * * FRI}
+    anchor-date: ${ACCOUNTING_PAYOUT_ANCHOR_DATE:}
   outbox:
     batch-size: ${ACCOUNTING_OUTBOX_BATCH_SIZE:100}
-    interval-sec: ${ACCOUNTING_OUTBOX_INTERVAL_SEC:60}
+    interval-sec: ${ACCOUNTING_OUTBOX_INTERVAL_SEC:10}
