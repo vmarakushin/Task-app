@@ -9,7 +9,9 @@ import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
+import task_service.exception.IllegalStatusSequenceException;
 import task_service.exception.NoWorkerException;
+import task_service.exception.TerminalTaskException;
 import task_service.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -311,7 +313,7 @@ class TaskServiceTest {
                 .thenReturn(Optional.of(task));
 
         assertThrows(
-                IllegalStateException.class,
+                IllegalStatusSequenceException.class,
                 () -> taskService.setStatus(1L, Status.IN_PROGRESS)
         );
 
@@ -339,6 +341,47 @@ class TaskServiceTest {
                         Status.IN_PROGRESS
                 )
         );
+    }
+
+    @Test
+    @DisplayName("Отмена новой задачи без исполнителя - разрешена")
+    void setStatus_shouldCancelTaskWithoutWorker() {
+
+        Task task = Task.builder()
+                .id(1L)
+                .title("Not needed anymore")
+                .status(Status.NEW)
+                .build();
+
+        when(taskRepository.findById(1L))
+                .thenReturn(Optional.of(task));
+
+        TaskResponse result = taskService.setStatus(1L, Status.CANCELLED);
+
+        assertEquals(Status.CANCELLED, result.status());
+    }
+
+    @Test
+    @DisplayName("Назначение исполнителя отменённой задаче - запрещено")
+    void setExecutor_shouldThrow_whenTaskCancelled() {
+
+        UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        Task task = Task.builder()
+                .id(1L)
+                .title("Cancelled")
+                .status(Status.CANCELLED)
+                .build();
+
+        when(taskRepository.findById(1L))
+                .thenReturn(Optional.of(task));
+
+        assertThrows(
+                TerminalTaskException.class,
+                () -> taskService.setExecutor(1L, workerId)
+        );
+
+        verify(workerRepository, never()).findById(any());
     }
 
     private static <T> T findEvent(ArgumentCaptor<Object> captor, Class<T> type) {

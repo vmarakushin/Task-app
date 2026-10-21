@@ -116,8 +116,78 @@ public class TaskControllerIT extends AbstractIntegrationTest {
                                 .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value(1))
+                // id генерирует последовательность, которая не сбрасывается между тестами,
+                // поэтому сравниваем с реальным id, а не с константой 1
+                .andExpect(jsonPath("$.content[0].id").value(taskNew.getId()))
                 .andExpect(jsonPath("$.content[0].title").value("Need to be fixed"));
+    }
+
+    @Test
+    @DisplayName("Пагинация: размер страницы больше 100 - 400")
+    void getPage_shouldReturn400_whenSizeTooBig() throws Exception {
+        mockMvc.perform(
+                        get("/api/tasks")
+                                .param("page", "0")
+                                .param("size", "1000")
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.startsWith("size")));
+    }
+
+    @Test
+    @DisplayName("Пагинация: отрицательная страница - 400")
+    void getPage_shouldReturn400_whenPageNegative() throws Exception {
+        mockMvc.perform(
+                        get("/api/tasks")
+                                .param("page", "-1")
+                )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Создание задачи без заголовка - 400")
+    void create_shouldReturn400_whenTitleBlank() throws Exception {
+        mockMvc.perform(
+                        post("/api/tasks")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"title\": \"  \", \"description\": \"d\"}")
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.startsWith("title")));
+    }
+
+    @Test
+    @DisplayName("Неизвестный статус - 400, а не 500")
+    void setStatus_shouldReturn400_whenStatusUnknown() throws Exception {
+        String template = String.format("/api/tasks/%d/status", taskNew.getId());
+        mockMvc.perform(
+                        patch(template)
+                                .param("status", "DONE")
+                )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Отмена задачи без исполнителя - 200")
+    void setStatus_shouldCancelTaskWithoutExecutor() throws Exception {
+        String template = String.format("/api/tasks/%d/status", newTaskWithoutExecutor.getId());
+        mockMvc.perform(
+                        patch(template)
+                                .param("status", "CANCELLED")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+    }
+
+    @Test
+    @DisplayName("Назначение исполнителя завершённой задаче - 409")
+    void setExecutor_shouldReturn409_whenTaskFinished() throws Exception {
+        String template = String.format("/api/tasks/%d/executor", taskFinished.getId());
+        mockMvc.perform(
+                        patch(template)
+                                .param("workerId", worker2.getId().toString())
+                )
+                .andExpect(status().isConflict());
     }
 
     @Test

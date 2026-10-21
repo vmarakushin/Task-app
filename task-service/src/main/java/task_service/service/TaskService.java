@@ -10,15 +10,16 @@ import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
-import task_service.exception.FinishedTaskException;
 import task_service.exception.IllegalStatusSequenceException;
 import task_service.exception.NoWorkerException;
 import task_service.exception.NotFoundException;
+import task_service.exception.TerminalTaskException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import task_service.repository.TaskRepository;
@@ -40,7 +41,8 @@ public class TaskService {
     @Transactional(readOnly = true)
     public Page<TaskResponse> getPage(int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        // Без сортировки порядок строк в PostgreSQL не гарантирован: страницы могут "плавать".
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
 
         return taskRepository.findAll(pageable)
                 .map(this::mapToResponse);
@@ -82,14 +84,16 @@ public class TaskService {
                         Messages.TASK_NOT_FOUND.format(taskId)
                 ));
 
+        if (task.getStatus().isTerminal()) {
+            throw new TerminalTaskException(
+                    Messages.WORKER_CANNOT_BE_ASSIGNED_TO_CLOSED_TASK.format(executorId, taskId, task.getStatus())
+            );
+        }
+
         Worker newWorker = workerRepository.findById(executorId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.WORKER_NOT_FOUND.format(executorId)
                 ));
-
-        if (task.getStatus() == Status.FINISHED) {
-            throw new FinishedTaskException(Messages.WORKER_CANNOT_BE_ASSIGNED_IF_TASK_IS_FINISHED.format(executorId, taskId));
-        }
 
         task.setExecutor(newWorker);
 
@@ -108,15 +112,15 @@ public class TaskService {
                         Messages.TASK_NOT_FOUND.format(taskId)
                 ));
 
-        if (task.getExecutor() == null) {
-            throw new NoWorkerException(
-                    Messages.WORKER_SHOULD_BE_ASSIGNED.text()
-            );
-        }
-
         if (!task.getStatus().canMoveTo(status)) {
             throw new IllegalStatusSequenceException(
                     Messages.ILLEGAL_TASK_STATUS_SEQUENCE.format(taskId, status, task.getStatus())
+            );
+        }
+
+        if (status.requiresWorker() && task.getExecutor() == null) {
+            throw new NoWorkerException(
+                    Messages.WORKER_SHOULD_BE_ASSIGNED.format(status)
             );
         }
 

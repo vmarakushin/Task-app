@@ -4,12 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+
+import task_service.service.Messages;
 
 @Slf4j
 @RestControllerAdvice
@@ -66,16 +68,38 @@ public class TaskServiceExceptionHandler {
                 .body(response);
     }
 
-    @ExceptionHandler(FinishedTaskException.class)
-    public ResponseEntity<ErrorResponse> handleTaskFinished(FinishedTaskException ex) {
+    @ExceptionHandler(TerminalTaskException.class)
+    public ResponseEntity<ErrorResponse> handleTerminalTask(TerminalTaskException ex) {
 
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
-                "An attempt to change worker of finished task",
+                "Task is closed",
                 ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    /**
+     * Должен стоять отдельно: ObjectOptimisticLockingFailureException - наследник
+     * DataAccessException и иначе попал бы в handleDatabase с ответом 500.
+     * Spring выбирает обработчик с самым близким типом исключения.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+
+        log.debug(ex.getMessage());
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Concurrent modification",
+                Messages.CONCURRENT_MODIFICATION.text()
         );
 
         return ResponseEntity
@@ -100,33 +124,6 @@ public class TaskServiceExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(response);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
-            MethodArgumentNotValidException ex
-    ) {
-        log.error(ex.getMessage());
-
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField() + ": " + error.getDefaultMessage()
-                )
-                .findFirst()
-                .orElse("Validation failed");
-
-        ErrorResponse response = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation Error",
-                message
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
                 .body(response);
     }
 

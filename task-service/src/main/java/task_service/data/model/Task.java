@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,4 +46,11 @@ public class Task {
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    /**
+     * Optimistic lock: Hibernate добавляет "WHERE version = ?" в UPDATE и увеличивает версию.
+     * Если запись успели изменить параллельно, UPDATE затронет 0 строк -> исключение -> 409.
+     */
+    @Version
+    private Long version;
 }
