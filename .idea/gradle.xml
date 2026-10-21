@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/accounting-service" />
             <option value="$PROJECT_DIR$/api-gateway" />
             <option value="$PROJECT_DIR$/auth-service" />
+            <option value="$PROJECT_DIR$/event-contracts" />
             <option value="$PROJECT_DIR$/search-service" />
             <option value="$PROJECT_DIR$/task-service" />
           </set>

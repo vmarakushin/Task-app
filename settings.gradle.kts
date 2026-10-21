@@ -11,6 +11,7 @@ plugins {
 rootProject.name = "TaskManagerTest"
 
 include(
+    "event-contracts",
     "task-service",
     "auth-service",
     "api-gateway",

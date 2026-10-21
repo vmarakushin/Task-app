@@ -4,9 +4,9 @@ import auth_service.dto.LoginRequest;
 import auth_service.dto.RegisterRequest;
 import auth_service.dto.RegisterResponse;
 import auth_service.dto.TokenResponse;
-import auth_service.event.user.UserCreatedFlowEvent;
-import auth_service.event.user.UserStreamEvent;
 import auth_service.kafka.KafkaProducer;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,8 +27,8 @@ public class AuthService {
     public RegisterResponse register(RegisterRequest request) {
         RegisterResponse response = client.register(request);
 
-        kafka.sendUserCreatedFlowEvent(
-                new UserCreatedFlowEvent(response.id(), Instant.now())
+        kafka.sendUserCreatedEvent(
+                new UserCreatedEvent(response.id(), Instant.now())
         );
         kafka.sendUserStreamEvent(
                 new UserStreamEvent(response.id(), response.firstName(), response.lastName(), response.email())

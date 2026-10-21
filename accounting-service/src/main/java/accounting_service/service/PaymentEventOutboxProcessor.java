@@ -1,9 +1,9 @@
 package accounting_service.service;
 
-import accounting_service.data.dto.PaymentEvent;
 import accounting_service.data.model.Payment;
 import accounting_service.kafka.AccountingEventProducer;
 import accounting_service.repository.PaymentRepository;
+import events.payment.PaymentEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

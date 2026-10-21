@@ -2,13 +2,13 @@ package accounting_service.service;
 
 import accounting_service.repository.BalanceRepository;
 import accounting_service.repository.JobRepository;
-import auth_service.event.user.UserCreatedFlowEvent;
+import events.task.TaskFinishedEvent;
+import events.task.WorkerAssignedEvent;
+import events.user.UserCreatedEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import task_service.data.dto.TaskFinishedFlowEvent;
-import task_service.data.dto.WorkerAssignedEvent;
 
 @Slf4j
 @Service
@@ -20,9 +20,9 @@ public class AccountingKafkaHandler {
     private final JobRepository jobRepository;
 
     @Transactional
-    public void handleUserCreated(UserCreatedFlowEvent event) {
+    public void handleUserCreated(UserCreatedEvent event) {
         if (balanceRepository.createIfAbsent(event.id()) != 1) {
-            log.warn("Duplicate UserCreatedFlowEvent, user: {}", event.id());
+            log.warn("Duplicate UserCreatedEvent, user: {}", event.id());
         }
     }
 
@@ -34,9 +34,9 @@ public class AccountingKafkaHandler {
     }
 
     @Transactional
-    public void handleTaskFinished(TaskFinishedFlowEvent event) {
-        if (jobRepository.finishIfNotFinished(event.id()) != 1) {
-            log.warn("Job already finished or not found. Task ID: {}", event.id());
+    public void handleTaskFinished(TaskFinishedEvent event) {
+        if (jobRepository.finishIfNotFinished(event.taskId()) != 1) {
+            log.warn("Job already finished or not found. Task ID: {}", event.taskId());
         }
     }
 }

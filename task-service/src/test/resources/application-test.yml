@@ -19,4 +19,4 @@ spring:
       group-id: test-group
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "task_application.data.dto"
+        spring.json.trusted.packages: "events.*"

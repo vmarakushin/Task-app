@@ -1,6 +1,7 @@
 package task_service.kafka;
 
-import auth_service.event.user.UserStreamEvent;
+import events.Topics;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.support.Acknowledgment;
@@ -15,7 +16,7 @@ public class UserStreamConsumer {
 
     private final TaskKafkaHandler handler;
 
-    @KafkaListener(topics = "user-stream")
+    @KafkaListener(topics = Topics.USER_STREAM)
     public void consume(UserStreamEvent event, Acknowledgment ack) {
         try {
             handler.handleUserStream(event);

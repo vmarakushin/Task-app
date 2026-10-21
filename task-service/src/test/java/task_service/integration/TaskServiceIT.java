@@ -1,5 +1,7 @@
 package task_service.integration;
 
+import events.Topics;
+import events.task.TaskCreatedEvent;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -12,7 +14,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.test.context.ActiveProfiles;
 import task_service.AbstractIntegrationTest;
 import task_service.data.dto.TaskCreateRequest;
-import task_service.data.dto.TaskCreatedFlowEvent;
 import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
@@ -51,7 +52,7 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
     private UUID worker1uuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private static Consumer<String, TaskCreatedFlowEvent> consumer;
+    private static Consumer<String, TaskCreatedEvent> consumer;
 
     @BeforeAll
     static void setupConsumer() {
@@ -70,9 +71,9 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
-        consumer = new DefaultKafkaConsumerFactory<String, TaskCreatedFlowEvent>(props).createConsumer();
+        consumer = new DefaultKafkaConsumerFactory<String, TaskCreatedEvent>(props).createConsumer();
 
-        consumer.subscribe(List.of("task-flow"));
+        consumer.subscribe(List.of(Topics.TASK_FLOW));
     }
 
     @BeforeEach
@@ -185,14 +186,14 @@ public class TaskServiceIT extends AbstractIntegrationTest {
                 new TaskCreateRequest("Task", "Desc")
         );
 
-        ConsumerRecords<String, TaskCreatedFlowEvent> records =
+        ConsumerRecords<String, TaskCreatedEvent> records =
                 consumer.poll(Duration.ofSeconds(10));
 
         assertFalse(records.isEmpty());
 
-        TaskCreatedFlowEvent event = records.iterator().next().value();
+        TaskCreatedEvent event = records.iterator().next().value();
 
-        assertTrue(event.id() > 0);
+        assertTrue(event.taskId() > 0);
         assertTrue(Instant.now().isAfter(event.createdAt()));
     }
 }

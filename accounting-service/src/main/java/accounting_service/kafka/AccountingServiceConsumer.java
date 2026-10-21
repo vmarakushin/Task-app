@@ -1,15 +1,16 @@
 package accounting_service.kafka;
 
 import accounting_service.service.AccountingKafkaHandler;
-import auth_service.event.user.UserCreatedFlowEvent;
+import events.Topics;
+import events.task.TaskFinishedEvent;
+import events.task.WorkerAssignedEvent;
+import events.user.UserCreatedEvent;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import task_service.data.dto.TaskFinishedFlowEvent;
-import task_service.data.dto.WorkerAssignedEvent;
 
 @Component
 @Slf4j
@@ -18,8 +19,8 @@ public class AccountingServiceConsumer {
 
     private final AccountingKafkaHandler handler;
 
-    @KafkaListener(topics = "user-flow")
-    public void consume(UserCreatedFlowEvent event, Acknowledgment ack) {
+    @KafkaListener(topics = Topics.USER_FLOW)
+    public void consume(UserCreatedEvent event, Acknowledgment ack) {
         try {
             handler.handleUserCreated(event);
             ack.acknowledge();
@@ -28,7 +29,7 @@ public class AccountingServiceConsumer {
         }
     }
 
-    @KafkaListener(topics = "task-assigned")
+    @KafkaListener(topics = Topics.TASK_ASSIGNED)
     public void consume(WorkerAssignedEvent event, Acknowledgment ack) {
         try {
             handler.handleWorkerAssigned(event);
@@ -38,8 +39,8 @@ public class AccountingServiceConsumer {
         }
     }
 
-    @KafkaListener(topics = "task-finished-flow")
-    public void consume(TaskFinishedFlowEvent event, Acknowledgment ack) {
+    @KafkaListener(topics = Topics.TASK_FINISHED_FLOW)
+    public void consume(TaskFinishedEvent event, Acknowledgment ack) {
         try {
             handler.handleTaskFinished(event);
             ack.acknowledge();

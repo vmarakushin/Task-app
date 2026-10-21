@@ -1,6 +1,12 @@
 package task_service.service;
 
-import task_service.data.dto.*;
+import events.task.TaskCreatedEvent;
+import events.task.TaskFinishedEvent;
+import events.task.TaskStatus;
+import events.task.TaskStreamEvent;
+import events.task.WorkerAssignedEvent;
+import task_service.data.dto.TaskCreateRequest;
+import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
@@ -61,11 +67,9 @@ public class TaskService {
         Task saved = taskRepository.save(task);
 
         eventPublisher.publishEvent(
-                new TaskCreatedFlowEvent(saved.getId(), Instant.now())
+                new TaskCreatedEvent(saved.getId(), Instant.now())
         );
-        eventPublisher.publishEvent(
-                new TaskStreamEvent(saved.getId(), saved.getTitle(), saved.getExecutor(), saved.getDescription(), saved.getStatus())
-        );
+        eventPublisher.publishEvent(toStreamEvent(saved));
 
         return mapToResponse(saved);
     }
@@ -92,9 +96,7 @@ public class TaskService {
         eventPublisher.publishEvent(
                 new WorkerAssignedEvent(task.getId(), task.getExecutor().getId())
         );
-        eventPublisher.publishEvent(
-                new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
-        );
+        eventPublisher.publishEvent(toStreamEvent(task));
         return mapToResponse(task);
     }
 
@@ -122,17 +124,26 @@ public class TaskService {
 
         if (task.getStatus() == Status.FINISHED) {
             eventPublisher.publishEvent(
-                    new TaskFinishedFlowEvent(task.getId(), Instant.now())
-            );
-            eventPublisher.publishEvent(
-                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
-            );
-        } else {
-            eventPublisher.publishEvent(
-                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
+                    new TaskFinishedEvent(task.getId(), task.getExecutor().getId(), Instant.now())
             );
         }
+        eventPublisher.publishEvent(toStreamEvent(task));
         return mapToResponse(task);
+    }
+
+    private TaskStreamEvent toStreamEvent(Task task) {
+
+        Worker worker = task.getExecutor();
+
+        return new TaskStreamEvent(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                TaskStatus.valueOf(task.getStatus().name()),
+                worker != null ? worker.getId() : null,
+                worker != null ? worker.getName() : null,
+                worker != null ? worker.getEmail() : null
+        );
     }
 
     private TaskResponse mapToResponse(Task task) {

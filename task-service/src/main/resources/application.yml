@@ -26,7 +26,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "auth_service.*"
+        spring.json.trusted.packages: "events.*"
 
     listener:
       ack-mode: manual_immediate

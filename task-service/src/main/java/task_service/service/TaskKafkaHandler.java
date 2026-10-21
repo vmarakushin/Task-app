@@ -1,6 +1,6 @@
 package task_service.service;
 
-import auth_service.event.user.UserStreamEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import task_service.repository.WorkerRepository;

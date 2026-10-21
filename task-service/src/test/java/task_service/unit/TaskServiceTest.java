@@ -1,10 +1,11 @@
 package task_service.unit;
 
+import events.task.TaskCreatedEvent;
+import events.task.TaskStreamEvent;
+import events.task.WorkerAssignedEvent;
 import org.junit.jupiter.api.DisplayName;
 import task_service.data.dto.TaskCreateRequest;
-import task_service.data.dto.TaskCreatedFlowEvent;
 import task_service.data.dto.TaskResponse;
-import task_service.data.dto.WorkerAssignedEvent;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
 import task_service.data.model.Worker;
@@ -138,14 +139,14 @@ class TaskServiceTest {
 
         verify(taskRepository).save(any(Task.class));
 
-        ArgumentCaptor<TaskCreatedFlowEvent> captor =
-                ArgumentCaptor.forClass(TaskCreatedFlowEvent.class);
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 
-        verify(eventPublisher).publishEvent(captor.capture());
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
 
-        TaskCreatedFlowEvent event = captor.getValue();
+        TaskCreatedEvent event = findEvent(captor, TaskCreatedEvent.class);
 
-        assertEquals(savedTask.getId(), event.id());
+        assertEquals(savedTask.getId(), event.taskId());
+        assertEquals(savedTask.getId(), findEvent(captor, TaskStreamEvent.class).taskId());
     }
 
     @Test
@@ -181,12 +182,12 @@ class TaskServiceTest {
         verify(taskRepository).findById(1L);
         verify(workerRepository).findById(workerId);
 
-        ArgumentCaptor<WorkerAssignedEvent> captor =
-                ArgumentCaptor.forClass(WorkerAssignedEvent.class);
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 
-        verify(eventPublisher).publishEvent(captor.capture());
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
 
-        WorkerAssignedEvent event = captor.getValue();
+        WorkerAssignedEvent event = findEvent(captor, WorkerAssignedEvent.class);
+        assertEquals(worker.getId(), findEvent(captor, TaskStreamEvent.class).workerId());
 
         assertEquals(task.getId(), event.taskId());
         assertEquals(worker.getId(), event.workerId());
@@ -338,5 +339,13 @@ class TaskServiceTest {
                         Status.IN_PROGRESS
                 )
         );
+    }
+
+    private static <T> T findEvent(ArgumentCaptor<Object> captor, Class<T> type) {
+        return captor.getAllValues().stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Event not published: " + type.getSimpleName()));
     }
 }

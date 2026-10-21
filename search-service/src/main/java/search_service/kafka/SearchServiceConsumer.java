@@ -1,14 +1,15 @@
 package search_service.kafka;
 
-import accounting_service.data.dto.PaymentEvent;
-import auth_service.event.user.UserCreatedFlowEvent;
-import auth_service.event.user.UserStreamEvent;
+import events.Topics;
+import events.payment.PaymentEvent;
+import events.task.TaskStreamEvent;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import task_service.data.dto.TaskStreamEvent;
 
 @Component
 @Slf4j
@@ -17,8 +18,8 @@ public class SearchServiceConsumer {
 
     private final SearchKafkaHandler handler;
 
-    @KafkaListener(topics = "user-flow")
-    public void consume(UserCreatedFlowEvent event, Acknowledgment ack) {
+    @KafkaListener(topics = Topics.USER_FLOW)
+    public void consume(UserCreatedEvent event, Acknowledgment ack) {
         try {
             handler.createBalance(event);
             ack.acknowledge();
@@ -27,7 +28,7 @@ public class SearchServiceConsumer {
         }
     }
 
-    @KafkaListener(topics = "payment-stream")
+    @KafkaListener(topics = Topics.PAYMENT_STREAM)
     public void consume(PaymentEvent event, Acknowledgment ack) {
         try {
             handler.handleSavePaymentToInbox(event);
@@ -37,7 +38,7 @@ public class SearchServiceConsumer {
         }
     }
 
-    @KafkaListener(topics = "user-stream")
+    @KafkaListener(topics = Topics.USER_STREAM)
     public void consume(UserStreamEvent event, Acknowledgment ack) {
         try {
             handler.handleUserStream(event);
@@ -47,7 +48,7 @@ public class SearchServiceConsumer {
         }
     }
 
-    @KafkaListener(topics = "task-stream")
+    @KafkaListener(topics = Topics.TASK_STREAM)
     public void consume(TaskStreamEvent event, Acknowledgment ack) {
         try {
             handler.handleTaskStream(event);

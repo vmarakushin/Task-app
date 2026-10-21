@@ -3,10 +3,11 @@ package auth_service.integration;
 import auth_service.AbstractIntegrationTest;
 import auth_service.dto.RegisterRequest;
 import auth_service.dto.RegisterResponse;
-import auth_service.event.user.UserCreatedFlowEvent;
-import auth_service.event.user.UserStreamEvent;
 import auth_service.service.AuthService;
 import auth_service.service.KeycloakClient;
+import events.Topics;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -40,7 +41,7 @@ public class KafkaTest extends AbstractIntegrationTest {
     @Autowired
     private AuthService authService;
 
-    private static Consumer<String, UserCreatedFlowEvent> flowConsumer;
+    private static Consumer<String, UserCreatedEvent> flowConsumer;
 
     private static Consumer<String, UserStreamEvent> streamConsumer;
 
@@ -71,12 +72,12 @@ public class KafkaTest extends AbstractIntegrationTest {
 
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
-        flowConsumer = new DefaultKafkaConsumerFactory<String, UserCreatedFlowEvent>(props).createConsumer();
-        flowConsumer.subscribe(List.of("user-flow"));
+        flowConsumer = new DefaultKafkaConsumerFactory<String, UserCreatedEvent>(props).createConsumer();
+        flowConsumer.subscribe(List.of(Topics.USER_FLOW));
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         streamConsumer = new DefaultKafkaConsumerFactory<String, UserStreamEvent>(props).createConsumer();
-        streamConsumer.subscribe(List.of("user-stream"));
+        streamConsumer.subscribe(List.of(Topics.USER_STREAM));
     }
 
     @Test
@@ -87,12 +88,12 @@ public class KafkaTest extends AbstractIntegrationTest {
 
         authService.register(new RegisterRequest(existingEmail, strongPassword, firstName, lastName));
 
-        ConsumerRecords<String, UserCreatedFlowEvent> records =
+        ConsumerRecords<String, UserCreatedEvent> records =
                 flowConsumer.poll(Duration.ofSeconds(10));
 
         assertFalse(records.isEmpty());
 
-        UserCreatedFlowEvent event = records.iterator().next().value();
+        UserCreatedEvent event = records.iterator().next().value();
 
         assertEquals(uuid, event.id());
         assertTrue(Instant.now().isAfter(event.createdAt()));

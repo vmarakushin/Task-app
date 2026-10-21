@@ -1,5 +1,6 @@
 package task_service.kafka;
 
+import events.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,7 @@ public class TaskTopicsConfig {
 
     @Bean
     public NewTopic taskFlowTopic() {
-        return TopicBuilder.name("task-flow")
+        return TopicBuilder.name(Topics.TASK_FLOW)
                 .partitions(1)
                 .replicas(1)
                 .build();
@@ -18,7 +19,7 @@ public class TaskTopicsConfig {
 
     @Bean
     public NewTopic taskStreamTopic() {
-        return TopicBuilder.name("task-stream")
+        return TopicBuilder.name(Topics.TASK_STREAM)
                 .partitions(1)
                 .replicas(1)
                 .build();
@@ -26,7 +27,7 @@ public class TaskTopicsConfig {
 
     @Bean
     public NewTopic taskAssignedTopic() {
-        return TopicBuilder.name("task-assigned")
+        return TopicBuilder.name(Topics.TASK_ASSIGNED)
                 .partitions(1)
                 .replicas(1)
                 .build();
@@ -34,7 +35,7 @@ public class TaskTopicsConfig {
 
     @Bean
     public NewTopic taskFinishedFlowTopic() {
-        return TopicBuilder.name("task-finished-flow")
+        return TopicBuilder.name(Topics.TASK_FINISHED_FLOW)
                 .partitions(1)
                 .replicas(1)
                 .build();
