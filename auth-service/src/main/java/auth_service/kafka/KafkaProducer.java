@@ -13,11 +13,7 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    /**
-     * Оба события уходят в одной Kafka-транзакции: консьюмеры с isolation.level=read_committed
-     * увидят либо оба, либо ни одного. Метод возвращается только после commit,
-     * любая ошибка (в т.ч. недоступность брокера) приводит к abort и пробрасывается.
-     */
+    /** Оба события публикуются в одной Kafka-транзакции. */
     public void sendUserRegistered(UserCreatedEvent created, UserStreamEvent stream) {
         String key = created.id().toString();
 

@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     /**
-     * @return 1 - событие новое, 0 - уже было обработано раньше (дубль)
+     * @return 1 - событие новое, 0 - уже обработано
      */
     @Modifying
     @Query(value = """

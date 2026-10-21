@@ -15,10 +15,6 @@ import task_service.repository.TaskRepository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * Два запроса прочитали одну и ту же задачу, первый сохранил изменения,
- * второй пытается сохранить свои поверх устаревшей версии.
- */
 @SpringBootTest
 @ActiveProfiles("test")
 public class OptimisticLockIT extends AbstractIntegrationTest {
@@ -39,7 +35,6 @@ public class OptimisticLockIT extends AbstractIntegrationTest {
                 .status(Status.NEW)
                 .build());
 
-        // Вне транзакции каждый findById - отдельная сессия: это два независимых "запроса".
         Task firstRequest = taskRepository.findById(saved.getId()).orElseThrow();
         Task secondRequest = taskRepository.findById(saved.getId()).orElseThrow();
 

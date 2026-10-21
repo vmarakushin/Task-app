@@ -22,9 +22,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * task-assigned и task-finished-flow - разные топики, Kafka не гарантирует порядок между ними.
- */
 @SpringBootTest
 public class EventOrderIT extends AbstractIntegrationTest {
 

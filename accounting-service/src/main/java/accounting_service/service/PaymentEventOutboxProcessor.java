@@ -4,11 +4,11 @@ import accounting_service.data.model.Payment;
 import accounting_service.kafka.AccountingEventProducer;
 import accounting_service.repository.PaymentRepository;
 import events.payment.PaymentEvent;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

@@ -44,9 +44,6 @@ public class BalanceControllerIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
-
-        // База общая для всех тестовых классов: начинаем с чистой таблицы,
-        // не надеясь, что предыдущий класс убрал за собой
         balanceRepository.deleteAll();
 
         worker1balance = balanceRepository.save(
@@ -78,8 +75,6 @@ public class BalanceControllerIT extends AbstractIntegrationTest {
                                 .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                // Ищем свои записи по workerId, а не по позиции в списке:
-                // позиция зависит от того, какие ещё строки есть в таблице
                 .andExpect(jsonPath("$.content[?(@.workerId == '%s')].amount", worker1uuid)
                         .value(hasItem(worker1amount.doubleValue())))
                 .andExpect(jsonPath("$.content[?(@.workerId == '%s')].amount", worker2uuid)

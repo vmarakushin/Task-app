@@ -45,10 +45,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Своя consumer group: Spring держит в кеше контексты других тестовых классов, их листенеры
- * живы и сидят в группе accounting-service. Внутри одной группы Kafka отдала бы сообщение
- * любому из них, а не этому контексту со шпионом. В отдельной группе этот контекст
- * получает все сообщения сам, и DLT у него тоже свой.
+ * Своя consumer group: листенеры закешированных контекстов других тестов
+ * не должны забирать сообщения у этого контекста.
  */
 @SpringBootTest(properties = "spring.kafka.consumer.group-id=accounting-error-handling-it")
 public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
@@ -70,7 +68,6 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
-    /** Балансы и job создают хендлеры по событиям - убираем, чтобы не мешать другим тестовым классам. */
     @AfterEach
     void tearDown() {
         jobRepository.deleteAll();
@@ -89,7 +86,6 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
         kafkaTemplate.send(Topics.USER_FLOW, userId.toString(), new UserCreatedEvent(userId, Instant.now())).get();
 
-        // Ждём вызовов именно шпиона: баланс в общей БД мог бы создать и хендлер другого контекста
         await().atMost(TIMEOUT).untilAsserted(() ->
                 verify(handler, times(3)).handleUserCreated(argThat(e -> userId.equals(e.id()))));
         assertTrue(balanceRepository.findById(userId).isPresent());
@@ -123,7 +119,6 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
         try (Consumer<String, String> dlt = deadLetterConsumer(Topics.USER_FLOW);
              KafkaProducer<String, String> raw = rawProducer()) {
-
             raw.send(new ProducerRecord<>(Topics.USER_FLOW, poisonKey, poison)).get();
             kafkaTemplate.send(Topics.USER_FLOW, nextUserId.toString(),
                     new UserCreatedEvent(nextUserId, Instant.now())).get();
@@ -132,7 +127,6 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
             assertEquals(poison, record.value());
             assertTrue(header(record, KafkaHeaders.DLT_EXCEPTION_FQCN).contains("Exception"));
-            // Следующее сообщение дошло до хендлера этого контекста - партиция не застряла
             await().atMost(TIMEOUT).untilAsserted(() ->
                     verify(handler).handleUserCreated(argThat(e -> nextUserId.equals(e.id()))));
         }

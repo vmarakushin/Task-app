@@ -19,7 +19,6 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public Page<TaskResponse> getPage(int page, int size) {
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
 
         return taskRepository.findResponses(pageable)
@@ -35,9 +34,6 @@ public class TaskService {
                 ));
     }
 
-    /**
-     * Исполнителя нет - "не назначен"; id есть, а данных нет - "ещё не синхронизирован".
-     */
     private TaskResponse withPlaceholders(TaskResponse task) {
         if (task.workerId() == null) {
             return copyWithWorker(task, Messages.NO_WORKER.text());

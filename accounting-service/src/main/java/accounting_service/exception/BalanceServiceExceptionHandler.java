@@ -16,7 +16,6 @@ public class BalanceServiceExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
-
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -34,7 +33,6 @@ public class BalanceServiceExceptionHandler {
             DataAccessException.class
     })
     public ResponseEntity<ErrorResponse> handleDatabase(Exception ex) {
-
         log.error("Database error", ex);
 
         ErrorResponse response = new ErrorResponse(
@@ -51,7 +49,6 @@ public class BalanceServiceExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-
         log.error("Unexpected error", ex);
 
         ErrorResponse response = new ErrorResponse(

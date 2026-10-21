@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * Топик {@link events.Topics#TASK_STREAM}: актуальное состояние задачи.
- * Поля worker* равны null, пока исполнитель не назначен.
+ * Поля {@code worker*} равны null, пока исполнитель не назначен.
  */
 public record TaskStreamEvent(
         Long taskId,

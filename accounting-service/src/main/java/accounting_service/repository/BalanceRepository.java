@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface BalanceRepository extends JpaRepository <Balance, UUID> {
+public interface BalanceRepository extends JpaRepository<Balance, UUID> {
 
     @Modifying
     @Query(value = """

@@ -26,9 +26,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * События из разных топиков приходят в произвольном порядке - read-модель должна это переживать.
- */
 @SpringBootTest
 public class SearchKafkaHandlerIT extends AbstractIntegrationTest {
 

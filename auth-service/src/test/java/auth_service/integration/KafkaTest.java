@@ -57,7 +57,6 @@ public class KafkaTest extends AbstractIntegrationTest {
 
     @BeforeAll
     static void setupConsumers() {
-
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafka().getBootstrapServers());
@@ -82,7 +81,7 @@ public class KafkaTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Проверка отправки в user-flow")
-    void register_shouldPushToKafka_userFlow(){
+    void register_shouldPushToKafka_userFlow() {
         when(keycloakClient.register(any()))
                 .thenReturn(new RegisterResponse(uuid, firstName, lastName, existingEmail));
 
@@ -101,7 +100,7 @@ public class KafkaTest extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Проверка отправки в user-stream")
-    void register_shouldPushToKafka_userStream(){
+    void register_shouldPushToKafka_userStream() {
         when(keycloakClient.register(any()))
                 .thenReturn(new RegisterResponse(uuid, firstName, lastName, existingEmail));
 

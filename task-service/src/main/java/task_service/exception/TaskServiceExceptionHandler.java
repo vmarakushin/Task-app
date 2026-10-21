@@ -7,11 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import task_service.service.Messages;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-
-import task_service.service.Messages;
 
 @Slf4j
 @RestControllerAdvice
@@ -19,7 +18,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -36,7 +34,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(NoWorkerException.class)
     public ResponseEntity<ErrorResponse> handleNoWorker(NoWorkerException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -53,7 +50,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(IllegalStatusSequenceException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStatusSequence(IllegalStatusSequenceException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -70,7 +66,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(TerminalTaskException.class)
     public ResponseEntity<ErrorResponse> handleTerminalTask(TerminalTaskException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -85,14 +80,9 @@ public class TaskServiceExceptionHandler {
                 .body(response);
     }
 
-    /**
-     * Должен стоять отдельно: ObjectOptimisticLockingFailureException - наследник
-     * DataAccessException и иначе попал бы в handleDatabase с ответом 500.
-     * Spring выбирает обработчик с самым близким типом исключения.
-     */
+    /** Отдельно от {@link #handleDatabase}: исключение - наследник {@code DataAccessException}. */
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -112,7 +102,6 @@ public class TaskServiceExceptionHandler {
             DataAccessException.class
     })
     public ResponseEntity<ErrorResponse> handleDatabase(Exception ex) {
-
         log.error("Database error", ex);
 
         ErrorResponse response = new ErrorResponse(
@@ -129,7 +118,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-
         log.error("Unexpected error", ex);
 
         ErrorResponse response = new ErrorResponse(

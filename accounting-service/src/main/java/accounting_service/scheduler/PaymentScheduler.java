@@ -21,10 +21,6 @@ public class PaymentScheduler {
     private final PayoutCalendar payoutCalendar;
     private final Clock clock;
 
-    /**
-     * Cron срабатывает каждую пятницу, а платёжная ли она - решает календарь.
-     * Cron без zone и Clock.systemDefaultZone() используют один и тот же пояс JVM.
-     */
     @Scheduled(cron = "${payment.payout.cron}")
     @SchedulerLock(
             name = "payFinishedJobs",

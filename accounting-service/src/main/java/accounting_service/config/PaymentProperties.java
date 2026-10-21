@@ -1,6 +1,7 @@
 package accounting_service.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
 import java.math.BigDecimal;
 
 @ConfigurationProperties(prefix = "payment")
@@ -10,9 +11,8 @@ public record PaymentProperties(
         Outbox outbox
 ) {
     /**
-     * @param cron       когда проверять, не наступил ли день выплаты (по умолчанию каждую пятницу в 00:00)
-     * @param anchorDate необязательная первая дата выплаты (yyyy-MM-dd); если пусто - ближайшая пятница
-     *                   после первого старта сервиса, сохраняется в таблице payout_schedule
+     * @param cron       когда проверять, наступил ли день выплаты
+     * @param anchorDate первая дата выплаты (yyyy-MM-dd); если пусто - ближайшая пятница после первого старта
      */
     public record Payout(
             String cron,

@@ -4,11 +4,11 @@ import events.payment.PaymentEvent;
 import events.task.TaskStreamEvent;
 import events.user.UserCreatedEvent;
 import events.user.UserStreamEvent;
-import search_service.repository.BalanceRepository;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import search_service.repository.BalanceRepository;
 import search_service.repository.PaymentRepository;
 import search_service.repository.TaskRepository;
 import search_service.repository.WorkerRepository;
@@ -33,10 +33,7 @@ public class SearchKafkaHandler {
         }
     }
 
-    /**
-     * Inbox + начисление в одной транзакции: либо событие записано и деньги
-     * начислены, либо ни то ни другое. Повторное событие отсекается по payment_id.
-     */
+    /** Запись в inbox и начисление в одной транзакции; повторное событие отсекается по {@code payment_id}. */
     @Transactional
     public void handlePayment(PaymentEvent event) {
         int saved = paymentRepository.saveIfNotExists(

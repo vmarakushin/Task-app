@@ -4,15 +4,6 @@ import events.task.TaskCreatedEvent;
 import events.task.TaskStreamEvent;
 import events.task.WorkerAssignedEvent;
 import org.junit.jupiter.api.DisplayName;
-import task_service.data.dto.TaskCreateRequest;
-import task_service.data.dto.TaskResponse;
-import task_service.data.model.Status;
-import task_service.data.model.Task;
-import task_service.data.model.Worker;
-import task_service.exception.IllegalStatusSequenceException;
-import task_service.exception.NoWorkerException;
-import task_service.exception.TerminalTaskException;
-import task_service.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,7 +12,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
-
+import task_service.data.dto.TaskCreateRequest;
+import task_service.data.dto.TaskResponse;
+import task_service.data.model.Status;
+import task_service.data.model.Task;
+import task_service.data.model.Worker;
+import task_service.exception.IllegalStatusSequenceException;
+import task_service.exception.NoWorkerException;
+import task_service.exception.NotFoundException;
+import task_service.exception.TerminalTaskException;
 import task_service.repository.TaskRepository;
 import task_service.repository.WorkerRepository;
 import task_service.service.TaskService;
@@ -52,7 +51,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Получение страницы - успех")
     void getPage_shouldReturnPage() {
-
         Task task = Task.builder()
                 .id(1L)
                 .title("Task")
@@ -80,7 +78,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Получение по ID - успех")
     void findById_shouldReturnTask() {
-
         Task task = Task.builder()
                 .id(1L)
                 .title("Task")
@@ -102,7 +99,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Получение задачи по ID - не найдено")
     void findById_shouldThrowWhenTaskNotFound() {
-
         when(taskRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
@@ -117,7 +113,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Создание задачи - успех")
     void create_shouldCreateTaskAndPublishEvent() {
-
         TaskCreateRequest request = new TaskCreateRequest(
                 "Task",
                 "Description"
@@ -154,7 +149,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение исполнителя задачи - успех")
     void setExecutor_shouldAssignWorker() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Worker worker = Worker.builder()
@@ -198,7 +192,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение исполнителя задачи - задача не найдена")
     void setExecutor_shouldThrowWhenTaskNotFound() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         when(taskRepository.findById(1L))
@@ -218,7 +211,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение исполнителя задачи - исполнитель не найден")
     void setExecutor_shouldThrowWhenWorkerNotFound() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Task task = Task.builder()
@@ -246,7 +238,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Обновление статуса задачи - успех")
     void setStatus_shouldUpdateStatus() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Worker worker = Worker.builder()
@@ -277,7 +268,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение статуса задачи - задача не найдена")
     void setStatus_shouldThrowWhenTaskNotFound() {
-
         when(taskRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
@@ -292,7 +282,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение статуса задачи - неправильный порядок статусов")
     void setStatus_shouldThrowWhenTransitionIsInvalid() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Worker worker = Worker.builder()
@@ -323,7 +312,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Изменение статуса задачи - отсутствие исполнителя")
     void setStatus_shouldThrow_ifWorkerNotAssigned() {
-
         Task task = Task.builder()
                 .id(1L)
                 .title("No executor")
@@ -346,7 +334,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Отмена новой задачи без исполнителя - разрешена")
     void setStatus_shouldCancelTaskWithoutWorker() {
-
         Task task = Task.builder()
                 .id(1L)
                 .title("Not needed anymore")
@@ -364,7 +351,6 @@ class TaskServiceTest {
     @Test
     @DisplayName("Назначение исполнителя отменённой задаче - запрещено")
     void setExecutor_shouldThrow_whenTaskCancelled() {
-
         UUID workerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
         Task task = Task.builder()

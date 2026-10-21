@@ -57,7 +57,6 @@ public class KeycloakClient {
         try (Response response = keycloak.realm(props.realm())
                 .users()
                 .create(user)) {
-
             int status = response.getStatus();
 
             if (status == 201) {
@@ -79,14 +78,10 @@ public class KeycloakClient {
         }
     }
 
-    /**
-     * Удаляет пользователя. 404 - не ошибка: значит, удалять уже нечего.
-     */
     public void deleteUser(UUID id) {
         try (Response response = keycloak.realm(props.realm())
                 .users()
                 .delete(id.toString())) {
-
             int status = response.getStatus();
             if (status != 204 && status != 404) {
                 throw new KeycloakException("Failed to delete user " + id + ", HTTP " + status);
@@ -95,7 +90,6 @@ public class KeycloakClient {
     }
 
     public TokenResponse login(String email, String password) {
-
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "password");
         formData.add("client_id", props.clientId());
@@ -106,8 +100,6 @@ public class KeycloakClient {
 
         AccessTokenResponse response;
         try {
-            // RestClient - синхронный HTTP-клиент Spring 6.1: для блокирующего MVC-сервиса
-            // не нужно тянуть WebFlux ради WebClient(...).block()
             response = restClient.post()
                     .uri(tokenUrl)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -124,7 +116,6 @@ public class KeycloakClient {
                     })
                     .body(AccessTokenResponse.class);
         } catch (ResourceAccessException e) {
-            // Keycloak недоступен по сети (connection refused, таймаут) - 502, а не 500
             throw new KeycloakException(e);
         }
 
@@ -138,7 +129,6 @@ public class KeycloakClient {
                 response.getExpiresIn()
         );
     }
-
 
     private String extractErrorMessage(String body) {
         try {

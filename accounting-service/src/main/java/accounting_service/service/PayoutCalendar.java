@@ -14,9 +14,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 
-/**
- * График выплат "через одну пятницу": от опорной даты каждые 14 дней.
- */
+/** График выплат через одну пятницу: каждые 14 дней от опорной даты. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -41,9 +39,7 @@ public class PayoutCalendar {
         return days >= 0 && days % PERIOD_DAYS == 0;
     }
 
-    /**
-     * Ближайший день выплаты, начиная с from (включительно).
-     */
+    /** Ближайший день выплаты, начиная с {@code from} включительно. */
     public LocalDate nextPayday(LocalDate from) {
         LocalDate first = anchor();
         if (!from.isAfter(first)) {
@@ -71,7 +67,6 @@ public class PayoutCalendar {
             return date;
         }
 
-        // Ближайшая пятница строго после сегодняшнего дня: сегодняшние 00:00 уже прошли.
         LocalDate nextFriday = LocalDate.now(clock).with(TemporalAdjusters.next(DayOfWeek.FRIDAY));
         return repository.saveAnchorIfAbsent(nextFriday);
     }

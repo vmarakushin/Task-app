@@ -22,7 +22,10 @@ public class AuthExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidUserCredentialsException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "auth_error", "message", Objects.requireNonNullElse(ex.getMessage(), "Invalid user credentials")));
+                .body(Map.of(
+                        "error", "auth_error",
+                        "message", Objects.requireNonNullElse(ex.getMessage(), "Invalid user credentials")
+                ));
     }
 
     @ExceptionHandler(KeycloakConfigurationException.class)

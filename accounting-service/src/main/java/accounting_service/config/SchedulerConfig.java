@@ -24,10 +24,6 @@ public class SchedulerConfig {
         );
     }
 
-    /**
-     * Часы в часовом поясе JVM (в Docker задаётся переменной TZ).
-     * Отдельный бин нужен, чтобы в тестах подставлять фиксированную дату.
-     */
     @Bean
     public Clock clock() {
         return Clock.systemDefaultZone();

@@ -47,10 +47,6 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    /**
-     * Optimistic lock: Hibernate добавляет "WHERE version = ?" в UPDATE и увеличивает версию.
-     * Если запись успели изменить параллельно, UPDATE затронет 0 строк -> исключение -> 409.
-     */
     @Version
     private Long version;
 }

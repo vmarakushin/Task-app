@@ -1,8 +1,5 @@
 package events;
 
-/**
- * Имена всех топиков системы. Единственное место, где они объявлены.
- */
 public final class Topics {
 
     public static final String USER_FLOW = "user-flow";
@@ -15,11 +12,7 @@ public final class Topics {
 
     public static final String PAYMENT_STREAM = "payment-stream";
 
-    /**
-     * Dead letter topic: сюда попадают сообщения, которые сервис-получатель
-     * не смог обработать после всех повторов. У каждой consumer group свой DLT,
-     * чтобы было видно, какой именно сервис не справился.
-     */
+    /** Топик для сообщений, которые consumer group не смогла обработать после всех повторов. */
     public static String deadLetter(String topic, String consumerGroup) {
         return topic + "." + consumerGroup + ".DLT";
     }

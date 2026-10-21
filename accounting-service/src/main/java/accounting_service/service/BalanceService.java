@@ -20,11 +20,10 @@ public class BalanceService {
 
     private final BalanceRepository balanceRepository;
 
-    private final String NOT_FOUND = "Balance with id %s was not found";
+    private static final String NOT_FOUND = "Balance with id %s was not found";
 
     @Transactional(readOnly = true)
     public Page<BalanceResponse> getPage(int page, int size) {
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("workerId"));
 
         return balanceRepository.findAll(pageable)

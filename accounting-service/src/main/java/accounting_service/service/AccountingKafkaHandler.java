@@ -5,10 +5,10 @@ import accounting_service.repository.JobRepository;
 import events.task.TaskFinishedEvent;
 import events.task.WorkerAssignedEvent;
 import events.user.UserCreatedEvent;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -29,7 +29,8 @@ public class AccountingKafkaHandler {
     @Transactional
     public void handleWorkerAssigned(WorkerAssignedEvent event) {
         if (jobRepository.upsert(event.taskId(), event.workerId()) != 1) {
-            log.warn("Duplicate WorkerAssignedEvent or an attempt to reassign finished job were occurred. Task ID: {}", event.taskId());
+            log.warn("Duplicate WorkerAssignedEvent or an attempt to reassign finished job. Task ID: {}",
+                    event.taskId());
         }
     }
 

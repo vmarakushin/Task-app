@@ -12,10 +12,8 @@ import reactor.core.publisher.Mono;
 import java.util.stream.Collectors;
 
 /**
- * Передаёт сервисам, кто пользователь, через заголовки user-id и user-roles.
- *
- * Сначала удаляет такие заголовки из входящего запроса: иначе клиент мог бы
- * сам прислать "user-id: чужой-id" на открытый маршрут, и сервис бы ему поверил.
+ * Передаёт сервисам {@code user-id} и {@code user-roles} из токена.
+ * Одноимённые заголовки, присланные клиентом, удаляются.
  */
 @Component
 public class UserHeadersFilter implements GlobalFilter, Ordered {

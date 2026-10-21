@@ -7,10 +7,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import task_service.service.TaskKafkaHandler;
 
-/**
- * Ошибки не перехватываются: их обрабатывает {@link KafkaErrorHandlingConfig}
- * (повторы, затем DLT). Offset коммитится контейнером после успешной обработки.
- */
 @Component
 @RequiredArgsConstructor
 public class UserStreamConsumer {

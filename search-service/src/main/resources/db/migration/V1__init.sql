@@ -1,15 +1,10 @@
--- search-service хранит read-модель (проекцию) данных других сервисов.
--- Целостность гарантирует источник, а события из разных топиков приходят
--- в произвольном порядке, поэтому внешних ключей между таблицами здесь нет.
-
 CREATE TABLE workers (
     id          UUID          PRIMARY KEY,
     name        VARCHAR(255)  NOT NULL,
     email       VARCHAR(255)  UNIQUE NOT NULL
 );
 
--- id приходит из task-service, поэтому BIGINT, а не BIGSERIAL.
--- worker_id без FOREIGN KEY: задача может прийти раньше, чем работник (user-stream).
+-- Без внешнего ключа на workers: события из разных топиков приходят в произвольном порядке.
 CREATE TABLE tasks (
     id          BIGINT        PRIMARY KEY,
     title       VARCHAR(255)  NOT NULL,

@@ -9,11 +9,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 
-/**
- * Единственный обработчик ошибок search-service (ошибки входных данных -
- * в RequestValidationExceptionHandler). search только читает данные,
- * поэтому бизнес-исключений task-service здесь нет.
- */
 @Slf4j
 @RestControllerAdvice
 public class SearchExceptionHandler {

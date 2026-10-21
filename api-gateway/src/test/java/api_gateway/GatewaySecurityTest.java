@@ -23,10 +23,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
 
-/**
- * mockJwt() подставляет уже "проверенный" токен в обход декодера:
- * проверяем правила доступа и заголовки, а не криптографию Keycloak.
- */
 @SpringBootTest
 @AutoConfigureWebTestClient
 @Import({GatewaySecurityTest.EchoRoute.class, GatewaySecurityTest.EchoController.class})
@@ -55,7 +51,6 @@ class GatewaySecurityTest {
     @Test
     @DisplayName("Регистрация и логин доступны без токена")
     void registration_shouldNotRequireToken() {
-        // auth-service в тесте не запущен, поэтому ответ будет 5xx - важно, что не 401/403
         webTestClient.post().uri("/registration")
                 .exchange()
                 .expectStatus().value(status -> {
@@ -80,7 +75,6 @@ class GatewaySecurityTest {
                 .jsonPath("$.user-roles").isEqualTo("worker");
     }
 
-    /** Тестовый маршрут: gateway перенаправляет запрос в контроллер этого же приложения. */
     @TestConfiguration
     static class EchoRoute {
         @Bean

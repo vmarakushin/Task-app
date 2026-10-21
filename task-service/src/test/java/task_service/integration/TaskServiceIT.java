@@ -56,7 +56,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
     @BeforeAll
     static void setupConsumer() {
-
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafka().getBootstrapServers());
@@ -78,7 +77,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
-
         worker = workerRepository.save(
                 Worker.builder()
                         .id(worker1uuid)
@@ -115,7 +113,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка создания задачи")
     void create_shouldPersistTask() {
-
         TaskCreateRequest request =
                 new TaskCreateRequest(
                         "Created task",
@@ -134,7 +131,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка получения задачи")
     void findById_shouldReturnExistingTask() {
-
         TaskResponse response =
                 taskService.findById(taskNew.getId());
 
@@ -145,7 +141,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка обновления исполнителя")
     void setExecutor_shouldAssignExistingWorker() {
-
         TaskResponse response =
                 taskService.setExecutor(
                         taskNew.getId(),
@@ -159,7 +154,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка обновления статуса")
     void setStatus_shouldChangeStatusSuccessfully() {
-
         TaskResponse response =
                 taskService.setStatus(
                         taskNew.getId(),
@@ -172,7 +166,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка получения задач с пагинацией")
     void getPage_shouldReturnSeededTasks() {
-
         var page = taskService.getPage(0, 10);
 
         assertEquals(2, page.getTotalElements());
@@ -181,7 +174,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка Kafka")
     void kafka_should_receive_event() {
-
         taskService.create(
                 new TaskCreateRequest("Task", "Desc")
         );

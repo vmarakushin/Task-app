@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-
 import org.springframework.test.web.servlet.MockMvc;
 import task_service.AbstractIntegrationTest;
 import task_service.data.dto.TaskCreateRequest;
@@ -57,7 +56,6 @@ public class TaskControllerIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
-
         worker = workerRepository.save(
                 Worker.builder()
                         .id(worker1uuid)
@@ -116,8 +114,6 @@ public class TaskControllerIT extends AbstractIntegrationTest {
                                 .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                // id генерирует последовательность, которая не сбрасывается между тестами,
-                // поэтому сравниваем с реальным id, а не с константой 1
                 .andExpect(jsonPath("$.content[0].id").value(taskNew.getId()))
                 .andExpect(jsonPath("$.content[0].title").value("Need to be fixed"));
     }

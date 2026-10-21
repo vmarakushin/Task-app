@@ -3,8 +3,6 @@ CREATE TABLE balance (
     amount       NUMERIC(19,2) NOT NULL DEFAULT 0
 );
 
--- task_id приходит из task-service, поэтому BIGINT, а не BIGSERIAL:
--- своя последовательность здесь не нужна.
 CREATE TABLE job (
     task_id      BIGINT        PRIMARY KEY,
     worker_id    UUID          NOT NULL,

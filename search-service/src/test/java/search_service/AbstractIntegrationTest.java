@@ -7,13 +7,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Singleton-контейнеры: запускаются один раз на всю JVM и живут до её завершения
- * (останавливает их Ryuk - служебный контейнер Testcontainers).
- *
- * Почему не @Testcontainers + @Container static: тогда контейнеры останавливаются
- * после каждого тестового класса, а Spring кеширует ApplicationContext между классами.
- * Следующий класс с такой же конфигурацией получал закешированный контекст
- * с портами уже остановленных контейнеров - "Connection refused" и таймауты.
+ * Контейнеры запускаются один раз на JVM: закешированные Spring-контексты
+ * разных тестовых классов должны ссылаться на одни и те же порты.
  */
 public abstract class AbstractIntegrationTest {
 

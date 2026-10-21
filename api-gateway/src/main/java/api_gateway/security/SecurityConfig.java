@@ -21,10 +21,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Проверка JWT прямо в gateway: подпись проверяется публичным ключом Keycloak (JWKS),
- * ключи кешируются, поэтому на каждый запрос в Keycloak ходить не нужно.
- */
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -47,10 +43,7 @@ public class SecurityConfig {
                 .build();
     }
 
-    /**
-     * Декодер с явной проверкой issuer. Через jwk-set-uri из application.yml Spring
-     * проверил бы только подпись и срок действия, но не то, кто выпустил токен.
-     */
+    /** Помимо подписи и срока действия проверяет issuer токена. */
     @Bean
     public ReactiveJwtDecoder jwtDecoder(JwtProperties properties) {
         NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder
@@ -60,10 +53,7 @@ public class SecurityConfig {
         return decoder;
     }
 
-    /**
-     * Keycloak кладёт роли realm в claim realm_access.roles, а Spring по умолчанию
-     * читает claim scope. Переводим роли в authorities вида ROLE_worker.
-     */
+    /** Роли realm из claim {@code realm_access.roles} в authorities {@code ROLE_*}. */
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(realmRoles());

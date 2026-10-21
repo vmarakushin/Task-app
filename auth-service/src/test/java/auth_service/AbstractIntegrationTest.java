@@ -6,11 +6,8 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * У auth-service нет своей БД - для тестов нужна только Kafka.
- *
- * Singleton-контейнер: запускается один раз на всю JVM. С @Testcontainers + @Container
- * он останавливался бы после каждого тестового класса, а закешированный Spring-контекст
- * следующего класса продолжал бы ходить на порт уже остановленного контейнера.
+ * Kafka запускается один раз на JVM: закешированные Spring-контексты
+ * разных тестовых классов должны ссылаться на один и тот же порт.
  */
 public abstract class AbstractIntegrationTest {
 

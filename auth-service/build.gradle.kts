@@ -21,20 +21,19 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.keycloak:keycloak-admin-client:${keycloakAdminVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.keycloak:keycloak-admin-client:$keycloakAdminVersion")
     implementation("org.springframework.kafka:spring-kafka")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test"){
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.testcontainers")
     }
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainersVersion")
-    testImplementation("org.testcontainers:testcontainers-kafka:${testcontainersVersion}")
+    testImplementation("org.testcontainers:testcontainers-kafka:$testcontainersVersion")
 }

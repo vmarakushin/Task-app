@@ -29,11 +29,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             @Param("worker_id") UUID workerId
     );
 
-    /**
-     * Помечает job завершённым. Если task-assigned ещё не обработан и job нет,
-     * создаёт его сразу завершённым - исполнитель берётся из TaskFinishedEvent.
-     * Уже завершённый job не трогает (повторное событие ничего не меняет).
-     */
+    /** Помечает job завершённым; если task-assigned ещё не обработан, создаёт job сразу завершённым. */
     @Modifying
     @Query(value = """
         INSERT INTO job (task_id, worker_id, finished)

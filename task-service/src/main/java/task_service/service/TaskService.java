@@ -5,6 +5,14 @@ import events.task.TaskFinishedEvent;
 import events.task.TaskStatus;
 import events.task.TaskStreamEvent;
 import events.task.WorkerAssignedEvent;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import task_service.data.dto.TaskCreateRequest;
 import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
@@ -14,14 +22,6 @@ import task_service.exception.IllegalStatusSequenceException;
 import task_service.exception.NoWorkerException;
 import task_service.exception.NotFoundException;
 import task_service.exception.TerminalTaskException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import task_service.repository.TaskRepository;
 import task_service.repository.WorkerRepository;
 
@@ -40,8 +40,6 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public Page<TaskResponse> getPage(int page, int size) {
-
-        // Без сортировки порядок строк в PostgreSQL не гарантирован: страницы могут "плавать".
         Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
 
         return taskRepository.findAll(pageable)
@@ -59,7 +57,6 @@ public class TaskService {
 
     @Transactional
     public TaskResponse create(TaskCreateRequest request) {
-
         Task task = Task.builder()
                 .title(request.title())
                 .description(request.description())
@@ -78,7 +75,6 @@ public class TaskService {
 
     @Transactional
     public TaskResponse setExecutor(Long taskId, UUID executorId) {
-
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.TASK_NOT_FOUND.format(taskId)
@@ -106,7 +102,6 @@ public class TaskService {
 
     @Transactional
     public TaskResponse setStatus(Long taskId, Status status) {
-
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.TASK_NOT_FOUND.format(taskId)
@@ -136,7 +131,6 @@ public class TaskService {
     }
 
     private TaskStreamEvent toStreamEvent(Task task) {
-
         Worker worker = task.getExecutor();
 
         return new TaskStreamEvent(
@@ -151,7 +145,6 @@ public class TaskService {
     }
 
     private TaskResponse mapToResponse(Task task) {
-
         Worker worker = task.getExecutor();
 
         return new TaskResponse(

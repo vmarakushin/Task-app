@@ -15,12 +15,9 @@ spring:
       retries: 3
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      # Задаёт транзакционный продюсер: Spring Boot сделает KafkaTemplate транзакционным.
       transaction-id-prefix: auth-tx-
       properties:
         enable.idempotence: true
-        # Если Kafka недоступна, регистрация должна быстро вернуть 503,
-        # а не висеть по минуте (значения Kafka по умолчанию: 60 с и 2 мин).
         max.block.ms: 5000
         request.timeout.ms: 5000
         delivery.timeout.ms: 10000

@@ -23,18 +23,14 @@ spring:
       group-id: search-service
       auto-offset-reset: earliest
       enable-auto-commit: false
-      # не видеть сообщения из отменённых Kafka-транзакций (auth-service)
       isolation-level: read_committed
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      # ErrorHandlingDeserializer: битый JSON не роняет poll(), а превращается
-      # в DeserializationException, которое DefaultErrorHandler сразу отправит в DLT.
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "events.*"
 
     listener:
-      # offset коммитится после каждой успешно обработанной (или отправленной в DLT) записи
       ack-mode: record
 
 server:

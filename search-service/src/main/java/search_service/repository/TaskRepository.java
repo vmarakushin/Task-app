@@ -16,10 +16,7 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    /**
-     * LEFT JOIN по worker_id без связи @ManyToOne: если работник ещё не пришёл
-     * из user-stream, задача всё равно вернётся, а поля работника будут null.
-     */
+    /** Работник подтягивается LEFT JOIN: задача возвращается, даже если user-stream ещё не обработан. */
     String SELECT_RESPONSE = """
             select new search_service.data.dto.TaskResponse(
                 t.id, t.title, t.description, t.status, t.workerId, w.name, w.email)

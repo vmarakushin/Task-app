@@ -16,19 +16,12 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.LocalDateTime;
 
-/**
- * Все ошибки входных данных - 400 Bad Request.
- *
- * HIGHEST_PRECEDENCE: Spring перебирает @RestControllerAdvice по порядку и берёт первый,
- * у которого есть подходящий метод. У других advice есть @ExceptionHandler(Exception.class),
- * который подходит к чему угодно, поэтому этот класс должен проверяться первым.
- */
+/** Ошибки входных данных - 400. Должен проверяться раньше advice с обработчиком {@code Exception}. */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class RequestValidationExceptionHandler {
 
-    /** @Valid @RequestBody: ошибки полей тела запроса. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleBody(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult()
@@ -40,7 +33,6 @@ public class RequestValidationExceptionHandler {
         return badRequest(message);
     }
 
-    /** Ограничения на параметрах метода контроллера: @Min/@Max на @RequestParam и т.п. */
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ErrorResponse> handleParameters(HandlerMethodValidationException ex) {
         String message = ex.getAllValidationResults()
@@ -53,7 +45,6 @@ public class RequestValidationExceptionHandler {
         return badRequest(message);
     }
 
-    /** Значение не приводится к типу: "abc" вместо числа, неизвестный статус, кривой UUID. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return badRequest(ex.getName() + ": invalid value '" + ex.getValue() + "'");

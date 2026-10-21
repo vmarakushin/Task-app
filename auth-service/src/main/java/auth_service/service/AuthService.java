@@ -24,15 +24,11 @@ public class AuthService {
 
     private final KafkaProducer kafka;
 
-    public TokenResponse login(LoginRequest request){
+    public TokenResponse login(LoginRequest request) {
         return client.login(request.email(), request.password());
     }
 
-    /**
-     * Регистрация затрагивает две системы - Keycloak и Kafka - без общей транзакции.
-     * Поэтому используется компенсация: если события не удалось опубликовать,
-     * созданный в Keycloak пользователь удаляется, а клиент получает 503.
-     */
+    /** Если события не опубликованы, созданный в Keycloak пользователь удаляется (компенсация). */
     public RegisterResponse register(RegisterRequest request) {
         RegisterResponse user = client.register(request);
 
@@ -54,7 +50,6 @@ public class AuthService {
             client.deleteUser(userId);
         } catch (RuntimeException deleteError) {
             cause.addSuppressed(deleteError);
-            // Пользователь остался в Keycloak без событий: в других сервисах его нет.
             log.error("COMPENSATION FAILED: user {} exists in Keycloak without events, manual cleanup required",
                     userId, deleteError);
         }

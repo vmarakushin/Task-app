@@ -5,7 +5,6 @@ build/
 !**/src/test/**/build/
 
 ### Local environment ###
-# Реальные значения переменных - только локально, в репозитории лежит .env.example
 .env
 
 ### IntelliJ IDEA ###

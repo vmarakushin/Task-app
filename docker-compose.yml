@@ -93,10 +93,8 @@ services:
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      # Любой base64-UUID из 22 символов; сгенерировать: kafka-storage.sh random-uuid
       KAFKA_CLUSTER_ID: OO77msMOR1-AH_TDLmxTvw
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # Для транзакций на одном брокере: по умолчанию Kafka требует 3 реплики
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
@@ -127,9 +125,7 @@ services:
       KC_DB_USERNAME: "${KEYCLOAK_DB_USER:-postgres}"
       KC_DB_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-postgres}"
       KC_HTTP_PORT: "${KEYCLOAK_PORT:-8080}"
-      # Подставляется в demo-realm.json при импорте (${KEYCLOAK_CLIENT_SECRET:auth-secret})
       KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:-auth-secret}"
-      # /health/ready на служебном порту 9000
       KC_HEALTH_ENABLED: true
     depends_on:
       keycloak-db:
@@ -137,7 +133,6 @@ services:
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import
     healthcheck:
-      # В образе Keycloak нет curl/wget, поэтому HTTP-запрос через /dev/tcp средствами bash
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3" ]
       interval: 10s
       timeout: 5s

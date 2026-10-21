@@ -17,7 +17,6 @@ import java.util.UUID;
 @Builder
 public class Task {
 
-    /** id задачи из task-service: свой генератор в проекции не нужен. */
     @Id
     @EqualsAndHashCode.Include
     private Long id;
@@ -25,10 +24,6 @@ public class Task {
     @NotBlank
     private String title;
 
-    /**
-     * Просто id, без @ManyToOne: работник может ещё не прийти из user-stream.
-     * Данные работника подтягиваются LEFT JOIN-ом в TaskRepository.
-     */
     @Column(name = "worker_id")
     private UUID workerId;
 

@@ -1,8 +1,5 @@
 package task_service.controller;
 
-import task_service.data.dto.TaskCreateRequest;
-import task_service.data.dto.TaskResponse;
-import task_service.data.model.Status;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,6 +8,9 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import task_service.data.dto.TaskCreateRequest;
+import task_service.data.dto.TaskResponse;
+import task_service.data.model.Status;
 import task_service.service.TaskService;
 
 import java.util.UUID;
