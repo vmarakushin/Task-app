@@ -24,12 +24,16 @@ spring:
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      # ErrorHandlingDeserializer: битый JSON не роняет poll(), а превращается
+      # в DeserializationException, которое DefaultErrorHandler сразу отправит в DLT.
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "events.*"
 
     listener:
-      ack-mode: manual_immediate
+      # offset коммитится после каждой успешно обработанной (или отправленной в DLT) записи
+      ack-mode: record
 
 server:
   port: ${TASK_SERVICE_PORT:8083}
