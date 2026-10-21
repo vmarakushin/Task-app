@@ -4,9 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import task_service.service.Messages;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -17,7 +18,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -34,7 +34,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(NoWorkerException.class)
     public ResponseEntity<ErrorResponse> handleNoWorker(NoWorkerException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -51,7 +50,6 @@ public class TaskServiceExceptionHandler {
 
     @ExceptionHandler(IllegalStatusSequenceException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStatusSequence(IllegalStatusSequenceException ex) {
-
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
@@ -66,16 +64,32 @@ public class TaskServiceExceptionHandler {
                 .body(response);
     }
 
-    @ExceptionHandler(FinishedTaskException.class)
-    public ResponseEntity<ErrorResponse> handleTaskFinished(FinishedTaskException ex) {
-
+    @ExceptionHandler(TerminalTaskException.class)
+    public ResponseEntity<ErrorResponse> handleTerminalTask(TerminalTaskException ex) {
         log.debug(ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
-                "An attempt to change worker of finished task",
+                "Task is closed",
                 ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    /** Отдельно от {@link #handleDatabase}: исключение - наследник {@code DataAccessException}. */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        log.debug(ex.getMessage());
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Concurrent modification",
+                Messages.CONCURRENT_MODIFICATION.text()
         );
 
         return ResponseEntity
@@ -88,7 +102,6 @@ public class TaskServiceExceptionHandler {
             DataAccessException.class
     })
     public ResponseEntity<ErrorResponse> handleDatabase(Exception ex) {
-
         log.error("Database error", ex);
 
         ErrorResponse response = new ErrorResponse(
@@ -103,36 +116,8 @@ public class TaskServiceExceptionHandler {
                 .body(response);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
-            MethodArgumentNotValidException ex
-    ) {
-        log.error(ex.getMessage());
-
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField() + ": " + error.getDefaultMessage()
-                )
-                .findFirst()
-                .orElse("Validation failed");
-
-        ErrorResponse response = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation Error",
-                message
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-
         log.error("Unexpected error", ex);
 
         ErrorResponse response = new ErrorResponse(

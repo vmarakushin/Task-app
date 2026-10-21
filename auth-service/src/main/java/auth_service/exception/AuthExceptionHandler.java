@@ -22,7 +22,10 @@ public class AuthExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidUserCredentialsException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "auth_error", "message", Objects.requireNonNullElse(ex.getMessage(), "Invalid user credentials")));
+                .body(Map.of(
+                        "error", "auth_error",
+                        "message", Objects.requireNonNullElse(ex.getMessage(), "Invalid user credentials")
+                ));
     }
 
     @ExceptionHandler(KeycloakConfigurationException.class)
@@ -41,6 +44,18 @@ public class AuthExceptionHandler {
                         LocalDateTime.now(),
                         HttpStatus.BAD_GATEWAY.value(),
                         "Keycloak error",
+                        ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleUnavailable(ServiceUnavailableException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        "Service Unavailable",
                         ex.getMessage()
                 ));
     }

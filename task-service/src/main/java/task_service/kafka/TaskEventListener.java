@@ -1,9 +1,9 @@
 package task_service.kafka;
 
-import task_service.data.dto.TaskCreatedFlowEvent;
-import task_service.data.dto.TaskFinishedFlowEvent;
-import task_service.data.dto.TaskStreamEvent;
-import task_service.data.dto.WorkerAssignedEvent;
+import events.task.TaskCreatedEvent;
+import events.task.TaskFinishedEvent;
+import events.task.TaskStreamEvent;
+import events.task.WorkerAssignedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -16,7 +16,7 @@ public class TaskEventListener {
     private final TaskEventProducer producer;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onTaskCreated(TaskCreatedFlowEvent event) {
+    public void onTaskCreated(TaskCreatedEvent event) {
         producer.sendTaskCreated(event);
     }
 
@@ -31,7 +31,7 @@ public class TaskEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onTaskFinished(TaskFinishedFlowEvent event) {
+    public void onTaskFinished(TaskFinishedEvent event) {
         producer.sendTaskFinished(event);
     }
 }

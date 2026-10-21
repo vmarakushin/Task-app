@@ -1,5 +1,6 @@
 package auth_service.kafka;
 
+import events.Topics;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,7 @@ public class UserTopicsConfig {
 
     @Bean
     public NewTopic userFlowTopic() {
-        return TopicBuilder.name("user-flow")
+        return TopicBuilder.name(Topics.USER_FLOW)
                 .partitions(1)
                 .replicas(1)
                 .build();
@@ -18,7 +19,7 @@ public class UserTopicsConfig {
 
     @Bean
     public NewTopic userStreamTopic() {
-        return TopicBuilder.name("user-stream")
+        return TopicBuilder.name(Topics.USER_STREAM)
                 .partitions(1)
                 .replicas(1)
                 .build();

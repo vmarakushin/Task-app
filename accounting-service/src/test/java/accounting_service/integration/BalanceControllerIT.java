@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,6 +44,7 @@ public class BalanceControllerIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        balanceRepository.deleteAll();
 
         worker1balance = balanceRepository.save(
                 Balance.builder()
@@ -73,10 +75,10 @@ public class BalanceControllerIT extends AbstractIntegrationTest {
                                 .param("size", "10")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].workerId").value(worker1balance.getWorkerId().toString()))
-                .andExpect(jsonPath("$.content[0].amount").value(worker1amount.longValue()))
-                .andExpect(jsonPath("$.content[1].workerId").value(worker2balance.getWorkerId().toString()))
-                .andExpect(jsonPath("$.content[1].amount").value(worker2amount.longValue()));
+                .andExpect(jsonPath("$.content[?(@.workerId == '%s')].amount", worker1uuid)
+                        .value(hasItem(worker1amount.doubleValue())))
+                .andExpect(jsonPath("$.content[?(@.workerId == '%s')].amount", worker2uuid)
+                        .value(hasItem(worker2amount.doubleValue())));
     }
 
     @Test

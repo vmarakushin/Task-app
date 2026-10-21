@@ -1,14 +1,14 @@
 package accounting_service.service;
 
-import accounting_service.data.dto.PaymentEvent;
 import accounting_service.data.model.Payment;
 import accounting_service.kafka.AccountingEventProducer;
 import accounting_service.repository.PaymentRepository;
-import jakarta.transaction.Transactional;
+import events.payment.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

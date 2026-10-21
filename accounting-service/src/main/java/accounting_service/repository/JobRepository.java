@@ -29,12 +29,19 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             @Param("worker_id") UUID workerId
     );
 
+    /** Помечает job завершённым; если task-assigned ещё не обработан, создаёт job сразу завершённым. */
     @Modifying
     @Query(value = """
-        UPDATE job 
-        SET finished = true
-        WHERE task_id = :task_id
-        AND finished = FALSE
+        INSERT INTO job (task_id, worker_id, finished)
+        VALUES (:task_id, :worker_id, TRUE)
+        ON CONFLICT (task_id) DO UPDATE SET
+            finished = TRUE,
+            worker_id = EXCLUDED.worker_id
+        WHERE
+            job.finished = FALSE
         """, nativeQuery = true)
-    int finishIfNotFinished(@Param("task_id") Long taskId);
+    int finish(
+            @Param("task_id") Long taskId,
+            @Param("worker_id") UUID workerId
+    );
 }

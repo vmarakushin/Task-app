@@ -5,8 +5,9 @@ public enum Messages {
     TASK_NOT_FOUND("Task with id %s not found"),
     WORKER_NOT_FOUND("Worker with id %s not found"),
     ILLEGAL_TASK_STATUS_SEQUENCE("Task %s can not be %s, because it is %s"),
-    WORKER_SHOULD_BE_ASSIGNED("Task must have an assigned worker before changing status"),
-    WORKER_CANNOT_BE_ASSIGNED_IF_TASK_IS_FINISHED("Worker $s can't be assigned because task $s is FINISHED");
+    WORKER_SHOULD_BE_ASSIGNED("Task must have an assigned worker to become %s"),
+    WORKER_CANNOT_BE_ASSIGNED_TO_CLOSED_TASK("Worker %s can't be assigned because task %s is %s"),
+    CONCURRENT_MODIFICATION("Task was modified by another request, reload it and try again");
 
     private final String text;
 

@@ -1,13 +1,40 @@
 {
   "realm": "demo",
   "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "worker",
+        "description": "Работник: доступ ко всем API через gateway"
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
+        "name": "default-roles-demo",
+        "description": "Роли, которые получает каждый новый пользователь",
+        "composite": true,
+        "composites": {
+          "realm": ["offline_access", "uma_authorization", "worker"]
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-demo"
+  },
   "clients": [
     {
       "clientId": "auth-service",
       "enabled": true,
       "publicClient": false,
       "serviceAccountsEnabled": true,
-      "secret": "auth-secret",
+      "secret": "${KEYCLOAK_CLIENT_SECRET:auth-secret}",
       "directAccessGrantsEnabled": true,
       "standardFlowEnabled": false,
       "protocol": "openid-connect",
@@ -16,7 +43,14 @@
       "webOrigins": []
     }
   ],
-  "roles": {
-    "realm": []
-  }
+  "users": [
+    {
+      "username": "service-account-auth-service",
+      "enabled": true,
+      "serviceAccountClientId": "auth-service",
+      "clientRoles": {
+        "realm-management": ["manage-users"]
+      }
+    }
+  ]
 }

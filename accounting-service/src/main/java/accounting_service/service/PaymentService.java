@@ -2,10 +2,10 @@ package accounting_service.service;
 
 import accounting_service.config.PaymentProperties;
 import accounting_service.repository.PaymentRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -18,14 +18,8 @@ public class PaymentService {
 
     @Transactional
     public void processPayments() {
-        try {
-            int count = paymentRepository.createPayments(
-                    properties.taskAmount()
-            );
-            log.info("Created {} payments", count);
-        } catch (Exception e) {
-            log.error("An error occurred while processing payday: ", e);
-        }
+        int count = paymentRepository.createPayments(properties.taskAmount());
+        log.info("Created {} payments", count);
     }
 
     public void sendPaymentsToKafka() {

@@ -1,11 +1,11 @@
 package search_service.repository;
 
-import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import search_service.data.model.Worker;
 
 import java.util.List;
@@ -33,6 +33,13 @@ public interface WorkerRepository extends JpaRepository<Worker, UUID> {
             @Param("email") String email
     );
 
-    @Query(value = "SELECT * FROM workers w WHERE w.email % :email LIMIT 100", nativeQuery = true)
+    /** Нечёткий поиск pg_trgm, самые похожие первыми. */
+    @Query(value = """
+        SELECT *
+        FROM workers w
+        WHERE w.email % :email
+        ORDER BY similarity(w.email, :email) DESC
+        LIMIT 100
+        """, nativeQuery = true)
     List<Worker> fuzzySearchByEmail(@Param("email") String email);
 }

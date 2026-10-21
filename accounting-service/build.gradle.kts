@@ -1,7 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    kotlin("jvm")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
     java
@@ -18,11 +15,12 @@ java {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(project(":event-contracts"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     implementation("org.springframework.kafka:spring-kafka")
 
@@ -37,9 +35,8 @@ dependencies {
 
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test"){
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.testcontainers")
     }
     testImplementation("org.springframework.kafka:spring-kafka-test")
@@ -47,10 +44,4 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers-postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers-kafka:$testcontainersVersion")
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "21"
-    }
 }

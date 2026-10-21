@@ -2,6 +2,9 @@ package search_service.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +26,8 @@ public class WorkerController {
     @GetMapping
     @Operation(summary = "Получить страницу работников")
     public ResponseEntity<Page<WorkerResponse>> getPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         return ResponseEntity.ok(workerService.getPage(page, size));
     }
@@ -37,7 +40,7 @@ public class WorkerController {
 
     @GetMapping("/search")
     @Operation(summary = "Нечеткий поиск работников по email")
-    public ResponseEntity<List<WorkerResponse>> fuzzySearchByEmail(@RequestParam String query) {
+    public ResponseEntity<List<WorkerResponse>> fuzzySearchByEmail(@RequestParam @Size(max = 255) String query) {
         return ResponseEntity.ok(workerService.fuzzySearchByEmail(query));
     }
 }

@@ -1,15 +1,16 @@
 package search_service.service;
 
-import search_service.data.dto.BalanceResponse;
-import search_service.data.model.Balance;
-import search_service.exception.NotFoundException;
-import search_service.repository.BalanceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import search_service.data.dto.BalanceResponse;
+import search_service.data.model.Balance;
+import search_service.exception.NotFoundException;
+import search_service.repository.BalanceRepository;
 
 import java.util.UUID;
 
@@ -19,12 +20,11 @@ public class BalanceService {
 
     private final BalanceRepository balanceRepository;
 
-    private final String NOT_FOUND = "Balance with id %s was not found";
+    private static final String NOT_FOUND = "Balance with id %s was not found";
 
     @Transactional(readOnly = true)
     public Page<BalanceResponse> getPage(int page, int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("workerId"));
 
         return balanceRepository.findAll(pageable)
                 .map(this::mapToResponse);

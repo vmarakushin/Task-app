@@ -1,7 +1,8 @@
 package accounting_service.kafka;
 
-import accounting_service.data.dto.PaymentEvent;
 import accounting_service.data.model.Payment;
+import events.Topics;
+import events.payment.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -15,11 +16,9 @@ public class AccountingEventProducer {
 
     private final KafkaTemplate<String, PaymentEvent> kafkaTemplate;
 
-    private final String PAYMENT_STREAM_TOPIC = "payment-stream";
-
     public CompletableFuture<SendResult<String, PaymentEvent>> sendPaymentProcessed(Payment payment) {
         return kafkaTemplate.send(
-                PAYMENT_STREAM_TOPIC,
+                Topics.PAYMENT_STREAM,
                 String.valueOf(payment.getId()),
                 new PaymentEvent(
                         payment.getId(),

@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 
 @Configuration
 @EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
@@ -21,5 +22,10 @@ public class SchedulerConfig {
                         .usingDbTime()
                         .build()
         );
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemDefaultZone();
     }
 }

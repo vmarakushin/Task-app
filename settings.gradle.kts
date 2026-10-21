@@ -1,9 +1,3 @@
-pluginManagement {
-    plugins {
-        kotlin("jvm") version "2.0.10"
-    }
-}
-
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
@@ -11,6 +5,7 @@ plugins {
 rootProject.name = "TaskManagerTest"
 
 include(
+    "event-contracts",
     "task-service",
     "auth-service",
     "api-gateway",

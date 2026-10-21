@@ -1,12 +1,14 @@
 package search_service.controller;
 
-import search_service.data.dto.BalanceResponse;
-import search_service.service.BalanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import search_service.data.dto.BalanceResponse;
+import search_service.service.BalanceService;
 
 import java.util.UUID;
 
@@ -21,8 +23,8 @@ public class BalanceController {
     @GetMapping
     @Operation(summary = "Получить балансы с пагинацией")
     public Page<BalanceResponse> getPage(
-            @RequestParam int page,
-            @RequestParam int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         return balanceService.getPage(page, size);
     }

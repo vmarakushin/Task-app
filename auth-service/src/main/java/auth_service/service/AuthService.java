@@ -4,14 +4,18 @@ import auth_service.dto.LoginRequest;
 import auth_service.dto.RegisterRequest;
 import auth_service.dto.RegisterResponse;
 import auth_service.dto.TokenResponse;
-import auth_service.event.user.UserCreatedFlowEvent;
-import auth_service.event.user.UserStreamEvent;
+import auth_service.exception.ServiceUnavailableException;
 import auth_service.kafka.KafkaProducer;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -20,19 +24,34 @@ public class AuthService {
 
     private final KafkaProducer kafka;
 
-    public TokenResponse login(LoginRequest request){
+    public TokenResponse login(LoginRequest request) {
         return client.login(request.email(), request.password());
     }
 
+    /** Если события не опубликованы, созданный в Keycloak пользователь удаляется (компенсация). */
     public RegisterResponse register(RegisterRequest request) {
-        RegisterResponse response = client.register(request);
+        RegisterResponse user = client.register(request);
 
-        kafka.sendUserCreatedFlowEvent(
-                new UserCreatedFlowEvent(response.id(), Instant.now())
-        );
-        kafka.sendUserStreamEvent(
-                new UserStreamEvent(response.id(), response.firstName(), response.lastName(), response.email())
-        );
-        return response;
+        try {
+            kafka.sendUserRegistered(
+                    new UserCreatedEvent(user.id(), Instant.now()),
+                    new UserStreamEvent(user.id(), user.firstName(), user.lastName(), user.email())
+            );
+        } catch (RuntimeException e) {
+            log.error("Failed to publish registration events for user {}, rolling back", user.id(), e);
+            compensate(user.id(), e);
+            throw new ServiceUnavailableException("Регистрация временно недоступна, попробуйте позже", e);
+        }
+        return user;
+    }
+
+    private void compensate(UUID userId, RuntimeException cause) {
+        try {
+            client.deleteUser(userId);
+        } catch (RuntimeException deleteError) {
+            cause.addSuppressed(deleteError);
+            log.error("COMPENSATION FAILED: user {} exists in Keycloak without events, manual cleanup required",
+                    userId, deleteError);
+        }
     }
 }

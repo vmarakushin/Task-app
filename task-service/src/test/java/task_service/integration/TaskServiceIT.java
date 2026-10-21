@@ -1,5 +1,7 @@
 package task_service.integration;
 
+import events.Topics;
+import events.task.TaskCreatedEvent;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -12,7 +14,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.test.context.ActiveProfiles;
 import task_service.AbstractIntegrationTest;
 import task_service.data.dto.TaskCreateRequest;
-import task_service.data.dto.TaskCreatedFlowEvent;
 import task_service.data.dto.TaskResponse;
 import task_service.data.model.Status;
 import task_service.data.model.Task;
@@ -51,11 +52,10 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
     private UUID worker1uuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private static Consumer<String, TaskCreatedFlowEvent> consumer;
+    private static Consumer<String, TaskCreatedEvent> consumer;
 
     @BeforeAll
     static void setupConsumer() {
-
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafka().getBootstrapServers());
@@ -70,14 +70,13 @@ public class TaskServiceIT extends AbstractIntegrationTest {
 
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
-        consumer = new DefaultKafkaConsumerFactory<String, TaskCreatedFlowEvent>(props).createConsumer();
+        consumer = new DefaultKafkaConsumerFactory<String, TaskCreatedEvent>(props).createConsumer();
 
-        consumer.subscribe(List.of("task-flow"));
+        consumer.subscribe(List.of(Topics.TASK_FLOW));
     }
 
     @BeforeEach
     void setUp() {
-
         worker = workerRepository.save(
                 Worker.builder()
                         .id(worker1uuid)
@@ -114,7 +113,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка создания задачи")
     void create_shouldPersistTask() {
-
         TaskCreateRequest request =
                 new TaskCreateRequest(
                         "Created task",
@@ -133,7 +131,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка получения задачи")
     void findById_shouldReturnExistingTask() {
-
         TaskResponse response =
                 taskService.findById(taskNew.getId());
 
@@ -144,7 +141,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка обновления исполнителя")
     void setExecutor_shouldAssignExistingWorker() {
-
         TaskResponse response =
                 taskService.setExecutor(
                         taskNew.getId(),
@@ -158,7 +154,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка обновления статуса")
     void setStatus_shouldChangeStatusSuccessfully() {
-
         TaskResponse response =
                 taskService.setStatus(
                         taskNew.getId(),
@@ -171,7 +166,6 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка получения задач с пагинацией")
     void getPage_shouldReturnSeededTasks() {
-
         var page = taskService.getPage(0, 10);
 
         assertEquals(2, page.getTotalElements());
@@ -180,19 +174,18 @@ public class TaskServiceIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("Проверка Kafka")
     void kafka_should_receive_event() {
-
         taskService.create(
                 new TaskCreateRequest("Task", "Desc")
         );
 
-        ConsumerRecords<String, TaskCreatedFlowEvent> records =
+        ConsumerRecords<String, TaskCreatedEvent> records =
                 consumer.poll(Duration.ofSeconds(10));
 
         assertFalse(records.isEmpty());
 
-        TaskCreatedFlowEvent event = records.iterator().next().value();
+        TaskCreatedEvent event = records.iterator().next().value();
 
-        assertTrue(event.id() > 0);
+        assertTrue(event.taskId() > 0);
         assertTrue(Instant.now().isAfter(event.createdAt()));
     }
 }

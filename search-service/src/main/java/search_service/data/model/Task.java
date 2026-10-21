@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "tasks")
 @Getter
@@ -16,16 +18,14 @@ import lombok.*;
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
 
     @NotBlank
     private String title;
 
-    @ManyToOne
-    @JoinColumn(name = "worker_id")
-    private Worker executor;
+    @Column(name = "worker_id")
+    private UUID workerId;
 
     private String description;
 

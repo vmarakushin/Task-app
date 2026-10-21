@@ -14,18 +14,20 @@ import java.util.UUID;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    /**
+     * @return 1 - событие новое, 0 - уже обработано
+     */
     @Modifying
     @Query(value = """
-        INSERT INTO inbox_payment_events (id, task_id, worker_id, amount, processed, created_at)
-        VALUES (:id, :taskId, :workerId, :amount, :processed, :createdAt)
-        ON CONFLICT (id) DO NOTHING
+        INSERT INTO inbox_payment_events (payment_id, task_id, worker_id, amount, created_at)
+        VALUES (:paymentId, :taskId, :workerId, :amount, :createdAt)
+        ON CONFLICT DO NOTHING
         """, nativeQuery = true)
     int saveIfNotExists(
-            @Param("id") Long id,
+            @Param("paymentId") Long paymentId,
             @Param("taskId") Long taskId,
             @Param("workerId") UUID workerId,
             @Param("amount") BigDecimal amount,
-            @Param("processed") Boolean processed,
             @Param("createdAt") Instant createdAt
     );
 }

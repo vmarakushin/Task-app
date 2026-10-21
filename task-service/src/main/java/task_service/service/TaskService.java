@@ -1,20 +1,27 @@
 package task_service.service;
 
-import task_service.data.dto.*;
-import task_service.data.model.Status;
-import task_service.data.model.Task;
-import task_service.data.model.Worker;
-import task_service.exception.FinishedTaskException;
-import task_service.exception.IllegalStatusSequenceException;
-import task_service.exception.NoWorkerException;
-import task_service.exception.NotFoundException;
+import events.task.TaskCreatedEvent;
+import events.task.TaskFinishedEvent;
+import events.task.TaskStatus;
+import events.task.TaskStreamEvent;
+import events.task.WorkerAssignedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import task_service.data.dto.TaskCreateRequest;
+import task_service.data.dto.TaskResponse;
+import task_service.data.model.Status;
+import task_service.data.model.Task;
+import task_service.data.model.Worker;
+import task_service.exception.IllegalStatusSequenceException;
+import task_service.exception.NoWorkerException;
+import task_service.exception.NotFoundException;
+import task_service.exception.TerminalTaskException;
 import task_service.repository.TaskRepository;
 import task_service.repository.WorkerRepository;
 
@@ -33,8 +40,7 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public Page<TaskResponse> getPage(int page, int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
 
         return taskRepository.findAll(pageable)
                 .map(this::mapToResponse);
@@ -51,7 +57,6 @@ public class TaskService {
 
     @Transactional
     public TaskResponse create(TaskCreateRequest request) {
-
         Task task = Task.builder()
                 .title(request.title())
                 .description(request.description())
@@ -61,56 +66,46 @@ public class TaskService {
         Task saved = taskRepository.save(task);
 
         eventPublisher.publishEvent(
-                new TaskCreatedFlowEvent(saved.getId(), Instant.now())
+                new TaskCreatedEvent(saved.getId(), Instant.now())
         );
-        eventPublisher.publishEvent(
-                new TaskStreamEvent(saved.getId(), saved.getTitle(), saved.getExecutor(), saved.getDescription(), saved.getStatus())
-        );
+        eventPublisher.publishEvent(toStreamEvent(saved));
 
         return mapToResponse(saved);
     }
 
     @Transactional
     public TaskResponse setExecutor(Long taskId, UUID executorId) {
-
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.TASK_NOT_FOUND.format(taskId)
                 ));
+
+        if (task.getStatus().isTerminal()) {
+            throw new TerminalTaskException(
+                    Messages.WORKER_CANNOT_BE_ASSIGNED_TO_CLOSED_TASK.format(executorId, taskId, task.getStatus())
+            );
+        }
 
         Worker newWorker = workerRepository.findById(executorId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.WORKER_NOT_FOUND.format(executorId)
                 ));
 
-        if (task.getStatus() == Status.FINISHED) {
-            throw new FinishedTaskException(Messages.WORKER_CANNOT_BE_ASSIGNED_IF_TASK_IS_FINISHED.format(executorId, taskId));
-        }
-
         task.setExecutor(newWorker);
 
         eventPublisher.publishEvent(
                 new WorkerAssignedEvent(task.getId(), task.getExecutor().getId())
         );
-        eventPublisher.publishEvent(
-                new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
-        );
+        eventPublisher.publishEvent(toStreamEvent(task));
         return mapToResponse(task);
     }
 
     @Transactional
     public TaskResponse setStatus(Long taskId, Status status) {
-
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.TASK_NOT_FOUND.format(taskId)
                 ));
-
-        if (task.getExecutor() == null) {
-            throw new NoWorkerException(
-                    Messages.WORKER_SHOULD_BE_ASSIGNED.text()
-            );
-        }
 
         if (!task.getStatus().canMoveTo(status)) {
             throw new IllegalStatusSequenceException(
@@ -118,25 +113,38 @@ public class TaskService {
             );
         }
 
+        if (status.requiresWorker() && task.getExecutor() == null) {
+            throw new NoWorkerException(
+                    Messages.WORKER_SHOULD_BE_ASSIGNED.format(status)
+            );
+        }
+
         task.setStatus(status);
 
         if (task.getStatus() == Status.FINISHED) {
             eventPublisher.publishEvent(
-                    new TaskFinishedFlowEvent(task.getId(), Instant.now())
-            );
-            eventPublisher.publishEvent(
-                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
-            );
-        } else {
-            eventPublisher.publishEvent(
-                    new TaskStreamEvent(task.getId(), task.getTitle(), task.getExecutor(), task.getDescription(), task.getStatus())
+                    new TaskFinishedEvent(task.getId(), task.getExecutor().getId(), Instant.now())
             );
         }
+        eventPublisher.publishEvent(toStreamEvent(task));
         return mapToResponse(task);
     }
 
-    private TaskResponse mapToResponse(Task task) {
+    private TaskStreamEvent toStreamEvent(Task task) {
+        Worker worker = task.getExecutor();
 
+        return new TaskStreamEvent(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                TaskStatus.valueOf(task.getStatus().name()),
+                worker != null ? worker.getId() : null,
+                worker != null ? worker.getName() : null,
+                worker != null ? worker.getEmail() : null
+        );
+    }
+
+    private TaskResponse mapToResponse(Task task) {
         Worker worker = task.getExecutor();
 
         return new TaskResponse(

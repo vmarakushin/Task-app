@@ -10,6 +10,7 @@ CREATE TABLE tasks (
                        description TEXT,
                        status      VARCHAR(50)  NOT NULL,
                        worker_id   UUID,
+                       version     BIGINT       NOT NULL DEFAULT 0,
 
                        CONSTRAINT fk_tasks_worker
                            FOREIGN KEY (worker_id)

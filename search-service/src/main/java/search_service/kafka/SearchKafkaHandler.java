@@ -1,17 +1,17 @@
 package search_service.kafka;
 
-import accounting_service.data.dto.PaymentEvent;
-import auth_service.event.user.UserStreamEvent;
-import search_service.repository.BalanceRepository;
-import auth_service.event.user.UserCreatedFlowEvent;
-import jakarta.transaction.Transactional;
+import events.payment.PaymentEvent;
+import events.task.TaskStreamEvent;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import search_service.repository.BalanceRepository;
 import search_service.repository.PaymentRepository;
 import search_service.repository.TaskRepository;
 import search_service.repository.WorkerRepository;
-import task_service.data.dto.TaskStreamEvent;
 
 @Slf4j
 @Service
@@ -27,25 +27,27 @@ public class SearchKafkaHandler {
     private final TaskRepository taskRepository;
 
     @Transactional
-    public void createBalance(UserCreatedFlowEvent event) {
+    public void createBalance(UserCreatedEvent event) {
         if (balanceRepository.createIfAbsent(event.id()) != 1) {
-            log.warn("Duplicate UserCreatedFlowEvent, user: {}", event.id());
+            log.warn("Duplicate UserCreatedEvent, user: {}", event.id());
         }
     }
 
+    /** Запись в inbox и начисление в одной транзакции; повторное событие отсекается по {@code payment_id}. */
     @Transactional
-    public void handleSavePaymentToInbox(PaymentEvent event) {
+    public void handlePayment(PaymentEvent event) {
         int saved = paymentRepository.saveIfNotExists(
                 event.paymentId(),
                 event.taskId(),
                 event.workerId(),
                 event.amount(),
-                false,
                 event.createdAt()
         );
-        if (saved != 1) {
-            log.warn("Duplicate PaymentEvent, user: {}", event.paymentId());
+        if (saved == 0) {
+            log.warn("Duplicate PaymentEvent, payment: {}", event.paymentId());
+            return;
         }
+        balanceRepository.credit(event.workerId(), event.amount());
     }
 
     @Transactional
@@ -56,11 +58,11 @@ public class SearchKafkaHandler {
     @Transactional
     public void handleTaskStream(TaskStreamEvent event) {
         taskRepository.upsert(
-                        event.id(),
+                        event.taskId(),
                         event.title(),
                         event.description(),
                         event.status().name(),
-                        event.executor() != null ? event.executor().getId() : null
+                        event.workerId()
         );
     }
 }

@@ -19,7 +19,8 @@ import java.util.UUID;
 public class Payment {
 
     @Id
-    private Long id;
+    @Column(name = "payment_id")
+    private Long paymentId;
 
     @Column(name = "task_id", nullable = false, unique = true)
     private Long taskId;
@@ -29,9 +30,6 @@ public class Payment {
 
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
-
-    @Column(nullable = false)
-    private Boolean processed;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

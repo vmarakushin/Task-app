@@ -1,7 +1,8 @@
 package auth_service.kafka;
 
-import auth_service.event.user.UserCreatedFlowEvent;
-import auth_service.event.user.UserStreamEvent;
+import events.Topics;
+import events.user.UserCreatedEvent;
+import events.user.UserStreamEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -12,14 +13,14 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    private static final String USER_FLOW_TOPIC = "user-flow";
-    private static final String USER_STREAM_TOPIC = "user-stream";
+    /** Оба события публикуются в одной Kafka-транзакции. */
+    public void sendUserRegistered(UserCreatedEvent created, UserStreamEvent stream) {
+        String key = created.id().toString();
 
-    public void sendUserCreatedFlowEvent(UserCreatedFlowEvent event) {
-        kafkaTemplate.send(USER_FLOW_TOPIC, event.id().toString(), event).join();
-    }
-
-    public void sendUserStreamEvent(UserStreamEvent event) {
-        kafkaTemplate.send(USER_STREAM_TOPIC, event.id().toString(), event).join();
+        kafkaTemplate.executeInTransaction(operations -> {
+            operations.send(Topics.USER_FLOW, key, created);
+            operations.send(Topics.USER_STREAM, key, stream);
+            return null;
+        });
     }
 }

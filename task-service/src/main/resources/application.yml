@@ -23,13 +23,15 @@ spring:
       group-id: task-service
       auto-offset-reset: earliest
       enable-auto-commit: false
+      isolation-level: read_committed
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
-        spring.json.trusted.packages: "auth_service.*"
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "events.*"
 
     listener:
-      ack-mode: manual_immediate
+      ack-mode: record
 
 server:
   port: ${TASK_SERVICE_PORT:8083}

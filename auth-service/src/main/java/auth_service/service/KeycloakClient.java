@@ -19,9 +19,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +30,7 @@ public class KeycloakClient {
 
     private final Keycloak keycloak;
     private final KeycloakProperties props;
-    private final WebClient webClient = WebClient.builder().build();
+    private final RestClient restClient = RestClient.create();
     private final String tokenUrl;
 
     public KeycloakClient(KeycloakProperties props, Keycloak keycloak) {
@@ -58,7 +57,6 @@ public class KeycloakClient {
         try (Response response = keycloak.realm(props.realm())
                 .users()
                 .create(user)) {
-
             int status = response.getStatus();
 
             if (status == 201) {
@@ -80,8 +78,18 @@ public class KeycloakClient {
         }
     }
 
-    public TokenResponse login(String email, String password) {
+    public void deleteUser(UUID id) {
+        try (Response response = keycloak.realm(props.realm())
+                .users()
+                .delete(id.toString())) {
+            int status = response.getStatus();
+            if (status != 204 && status != 404) {
+                throw new KeycloakException("Failed to delete user " + id + ", HTTP " + status);
+            }
+        }
+    }
 
+    public TokenResponse login(String email, String password) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "password");
         formData.add("client_id", props.clientId());
@@ -90,21 +98,26 @@ public class KeycloakClient {
         formData.add("password", password);
         formData.add("scope", "openid profile email");
 
-        AccessTokenResponse response = webClient.post()
-                .uri(tokenUrl)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData(formData))
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
-                    if (clientResponse.statusCode().value() == 401) {
-                        return Mono.error(new InvalidUserCredentialsException("Неверный логин или пароль"));
-                    }
-                    return Mono.error(new KeycloakConfigurationException("Ошибка настройки backend клиента"));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
-                        Mono.error(new KeycloakException("Внутренняя ошибка Keycloak")))
-                .bodyToMono(AccessTokenResponse.class)
-                .block();
+        AccessTokenResponse response;
+        try {
+            response = restClient.post()
+                    .uri(tokenUrl)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(formData)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, (request, clientResponse) -> {
+                        if (clientResponse.getStatusCode().value() == 401) {
+                            throw new InvalidUserCredentialsException("Неверный логин или пароль");
+                        }
+                        throw new KeycloakConfigurationException("Ошибка настройки backend клиента");
+                    })
+                    .onStatus(HttpStatusCode::is5xxServerError, (request, clientResponse) -> {
+                        throw new KeycloakException("Внутренняя ошибка Keycloak");
+                    })
+                    .body(AccessTokenResponse.class);
+        } catch (ResourceAccessException e) {
+            throw new KeycloakException(e);
+        }
 
         if (response == null) {
             throw new KeycloakException("Не удалось получить токен от Keycloak");
@@ -116,7 +129,6 @@ public class KeycloakClient {
                 response.getExpiresIn()
         );
     }
-
 
     private String extractErrorMessage(String body) {
         try {
