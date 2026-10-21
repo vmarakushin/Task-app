@@ -42,7 +42,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
+/**
+ * Своя consumer group: Spring держит в кеше контексты других тестовых классов, их листенеры
+ * живы и сидят в группе accounting-service. Внутри одной группы Kafka отдала бы сообщение
+ * любому из них, а не этому контексту со шпионом. В отдельной группе этот контекст
+ * получает все сообщения сам, и DLT у него тоже свой.
+ */
+@SpringBootTest(properties = "spring.kafka.consumer.group-id=accounting-error-handling-it")
 public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
@@ -71,8 +77,10 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
         kafkaTemplate.send(Topics.USER_FLOW, userId.toString(), new UserCreatedEvent(userId, Instant.now())).get();
 
-        await().atMost(TIMEOUT).until(() -> balanceRepository.findById(userId).isPresent());
-        verify(handler, times(3)).handleUserCreated(argThat(e -> userId.equals(e.id())));
+        // Ждём вызовов именно шпиона: баланс в общей БД мог бы создать и хендлер другого контекста
+        await().atMost(TIMEOUT).untilAsserted(() ->
+                verify(handler, times(3)).handleUserCreated(argThat(e -> userId.equals(e.id()))));
+        assertTrue(balanceRepository.findById(userId).isPresent());
     }
 
     @Test
@@ -112,7 +120,9 @@ public class KafkaErrorHandlingIT extends AbstractIntegrationTest {
 
             assertEquals(poison, record.value());
             assertTrue(header(record, KafkaHeaders.DLT_EXCEPTION_FQCN).contains("Exception"));
-            await().atMost(TIMEOUT).until(() -> balanceRepository.findById(nextUserId).isPresent());
+            // Следующее сообщение дошло до хендлера этого контекста - партиция не застряла
+            await().atMost(TIMEOUT).untilAsserted(() ->
+                    verify(handler).handleUserCreated(argThat(e -> nextUserId.equals(e.id()))));
         }
     }
 
