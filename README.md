@@ -83,14 +83,18 @@ Task Service — микросервисное backend-приложение дл�
 ## Запуск
 
 ```bash
+cp .env.example .env   # при необходимости поменять значения
 docker compose up -d
 ```
 
-После запуска необходимо выдать клиенту **auth-service** роль:
+Realm `demo` импортируется из `keycloak/realm/demo-realm.json` при первом старте Keycloak
+(уже существующий realm не перезаписывается - для повторного импорта нужен `docker compose down -v`).
+В нём уже настроено:
 
-- **Realm:** `demo`
-- **Client:** `auth-service`
-- **Service Account Role:** `manage-users`
+- клиент `auth-service` с ролью `manage-users` у service account;
+- роль `worker`, которую автоматически получает каждый зарегистрированный пользователь.
+
+Все запросы, кроме `/registration` и `/login`, требуют JWT с ролью `worker`.
 
 ---
 
