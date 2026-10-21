@@ -10,7 +10,7 @@ public record TaskResponse(
         @Schema(
                 description = "Id созданной задачи"
         )
-        long id,
+        Long id,
 
         @Schema(
                 description = "Краткое описание задачи"

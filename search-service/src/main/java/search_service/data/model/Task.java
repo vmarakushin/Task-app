@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "tasks")
 @Getter
@@ -15,17 +17,20 @@ import lombok.*;
 @Builder
 public class Task {
 
+    /** id задачи из task-service: свой генератор в проекции не нужен. */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
 
     @NotBlank
     private String title;
 
-    @ManyToOne
-    @JoinColumn(name = "worker_id")
-    private Worker executor;
+    /**
+     * Просто id, без @ManyToOne: работник может ещё не прийти из user-stream.
+     * Данные работника подтягиваются LEFT JOIN-ом в TaskRepository.
+     */
+    @Column(name = "worker_id")
+    private UUID workerId;
 
     private String description;
 

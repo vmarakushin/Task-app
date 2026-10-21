@@ -35,8 +35,8 @@ public class AccountingKafkaHandler {
 
     @Transactional
     public void handleTaskFinished(TaskFinishedEvent event) {
-        if (jobRepository.finishIfNotFinished(event.taskId()) != 1) {
-            log.warn("Job already finished or not found. Task ID: {}", event.taskId());
+        if (jobRepository.finish(event.taskId(), event.workerId()) != 1) {
+            log.warn("Duplicate TaskFinishedEvent, job already finished. Task ID: {}", event.taskId());
         }
     }
 }

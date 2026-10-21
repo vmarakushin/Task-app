@@ -26,7 +26,7 @@ public class SearchServiceConsumer {
 
     @KafkaListener(topics = Topics.PAYMENT_STREAM)
     public void consume(PaymentEvent event) {
-        handler.handleSavePaymentToInbox(event);
+        handler.handlePayment(event);
     }
 
     @KafkaListener(topics = Topics.USER_STREAM)

@@ -33,19 +33,24 @@ public class SearchKafkaHandler {
         }
     }
 
+    /**
+     * Inbox + начисление в одной транзакции: либо событие записано и деньги
+     * начислены, либо ни то ни другое. Повторное событие отсекается по payment_id.
+     */
     @Transactional
-    public void handleSavePaymentToInbox(PaymentEvent event) {
+    public void handlePayment(PaymentEvent event) {
         int saved = paymentRepository.saveIfNotExists(
                 event.paymentId(),
                 event.taskId(),
                 event.workerId(),
                 event.amount(),
-                false,
                 event.createdAt()
         );
-        if (saved != 1) {
-            log.warn("Duplicate PaymentEvent, user: {}", event.paymentId());
+        if (saved == 0) {
+            log.warn("Duplicate PaymentEvent, payment: {}", event.paymentId());
+            return;
         }
+        balanceRepository.credit(event.workerId(), event.amount());
     }
 
     @Transactional

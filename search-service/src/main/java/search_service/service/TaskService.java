@@ -8,9 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import search_service.data.dto.TaskResponse;
 import search_service.exception.NotFoundException;
-import search_service.data.model.Task;
-import search_service.data.model.Worker;
-
 import search_service.repository.TaskRepository;
 
 @Service
@@ -24,32 +21,41 @@ public class TaskService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return taskRepository.findAll(pageable)
-                .map(this::mapToResponse);
+        return taskRepository.findResponses(pageable)
+                .map(this::withPlaceholders);
     }
 
     @Transactional(readOnly = true)
     public TaskResponse findById(long id) {
-        return taskRepository.findById(id)
-                .map(this::mapToResponse)
+        return taskRepository.findResponseById(id)
+                .map(this::withPlaceholders)
                 .orElseThrow(() -> new NotFoundException(
                         Messages.TASK_NOT_FOUND.format(id)
                 ));
     }
 
+    /**
+     * Исполнителя нет - "не назначен"; id есть, а данных нет - "ещё не синхронизирован".
+     */
+    private TaskResponse withPlaceholders(TaskResponse task) {
+        if (task.workerId() == null) {
+            return copyWithWorker(task, Messages.NO_WORKER.text());
+        }
+        if (task.workerName() == null) {
+            return copyWithWorker(task, Messages.WORKER_NOT_SYNCED.text());
+        }
+        return task;
+    }
 
-    private TaskResponse mapToResponse(Task task) {
-
-        Worker worker = task.getExecutor();
-
+    private static TaskResponse copyWithWorker(TaskResponse task, String placeholder) {
         return new TaskResponse(
-                task.getId(),
-                task.getTitle(),
-                task.getDescription(),
-                task.getStatus(),
-                worker != null ? worker.getId() : null,
-                worker != null ? worker.getName() : Messages.NO_WORKER.text(),
-                worker != null ? worker.getEmail() : Messages.NO_WORKER.text()
+                task.id(),
+                task.title(),
+                task.description(),
+                task.status(),
+                task.workerId(),
+                placeholder,
+                placeholder
         );
     }
 }
