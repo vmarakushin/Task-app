@@ -5,7 +5,7 @@ import accounting_service.repository.JobRepository;
 import events.task.TaskFinishedEvent;
 import events.task.WorkerAssignedEvent;
 import events.user.UserCreatedEvent;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

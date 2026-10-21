@@ -2,7 +2,7 @@ package accounting_service.service;
 
 import accounting_service.config.PaymentProperties;
 import accounting_service.repository.PaymentRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

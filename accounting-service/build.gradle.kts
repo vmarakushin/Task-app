@@ -1,7 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    kotlin("jvm")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
     java
@@ -18,8 +15,6 @@ java {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-
     implementation(project(":event-contracts"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -49,10 +44,4 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers-postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:testcontainers-kafka:$testcontainersVersion")
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "21"
-    }
 }

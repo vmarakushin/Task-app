@@ -1,6 +1,6 @@
 package search_service.repository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +33,16 @@ public interface WorkerRepository extends JpaRepository<Worker, UUID> {
             @Param("email") String email
     );
 
-    @Query(value = "SELECT * FROM workers w WHERE w.email % :email LIMIT 100", nativeQuery = true)
+    /**
+     * % - оператор pg_trgm "похожи по триграммам" (порог similarity по умолчанию 0.3),
+     * он использует GIN-индекс idx_workers_email_trgm. Сортировка - самые похожие первыми.
+     */
+    @Query(value = """
+        SELECT *
+        FROM workers w
+        WHERE w.email % :email
+        ORDER BY similarity(w.email, :email) DESC
+        LIMIT 100
+        """, nativeQuery = true)
     List<Worker> fuzzySearchByEmail(@Param("email") String email);
 }
