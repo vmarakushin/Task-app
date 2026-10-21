@@ -4,7 +4,9 @@ FROM gradle:8.14-jdk21-alpine AS build
 
 WORKDIR /app
 
-# Файлы сборки всех модулей: settings.gradle.kts подключает их все,
+# Отдельный COPY на каждый путь, чтобы сохранить структуру папок (COPY a/x b/y ./
+# сложил бы всё в одну папку). Слои этого этапа в итоговый образ не попадают.
+# Файлы сборки нужны все: settings.gradle.kts подключает все модули,
 # и Gradle должен суметь сконфигурировать проект целиком
 COPY settings.gradle.kts build.gradle.kts ./
 COPY event-contracts/build.gradle.kts event-contracts/
@@ -14,13 +16,17 @@ COPY accounting-service/build.gradle.kts accounting-service/
 COPY search-service/build.gradle.kts search-service/
 COPY api-gateway/build.gradle.kts api-gateway/
 
-# Исходники только тех модулей, которые нужны этому сервису
+# Исходники только тех модулей, которые нужны этому сервису:
+# изменения в других сервисах не сбрасывают кеш сборки этого
 COPY event-contracts/src event-contracts/src
 COPY accounting-service/src accounting-service/src
 
 # Кеш зависимостей Gradle переживает пересборки (BuildKit cache mount):
-# библиотеки не скачиваются заново при каждом изменении кода
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+# библиотеки не скачиваются заново при каждом изменении кода.
+# sharing=locked: compose собирает образы параллельно, а два Gradle из разных
+# контейнеров не могут одновременно работать с одним кешем (блокировка не видна
+# между контейнерами). Сборки пользуются кешем по очереди.
+RUN --mount=type=cache,target=/home/gradle/.gradle,sharing=locked \
     gradle :accounting-service:bootJar --no-daemon
 
 
