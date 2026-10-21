@@ -1,0 +1,15 @@
+# Всё, что не нужно для сборки образа: меньше контекст - быстрее build
+# и никаких секретов (.env) внутри образа
+.git
+.gitignore
+.idea
+.gradle
+**/build
+**/out
+*.iml
+.env
+.env.example
+Claude outputs
+docker-compose.yml
+README.md
+keycloak

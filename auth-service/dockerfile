@@ -1,20 +1,42 @@
 # ===== Stage 1: build =====
-FROM gradle:8.7-jdk21 AS building_jar
+# Тот же мажорный Gradle, что и в wrapper (8.14), с JDK 21
+FROM gradle:8.14-jdk21-alpine AS build
 
 WORKDIR /app
 
-COPY . .
+# Файлы сборки всех модулей: settings.gradle.kts подключает их все,
+# и Gradle должен суметь сконфигурировать проект целиком
+COPY settings.gradle.kts build.gradle.kts ./
+COPY event-contracts/build.gradle.kts event-contracts/
+COPY task-service/build.gradle.kts task-service/
+COPY auth-service/build.gradle.kts auth-service/
+COPY accounting-service/build.gradle.kts accounting-service/
+COPY search-service/build.gradle.kts search-service/
+COPY api-gateway/build.gradle.kts api-gateway/
 
-RUN gradle :auth-service:bootJar --no-daemon
+# Исходники только тех модулей, которые нужны этому сервису
+COPY event-contracts/src event-contracts/src
+COPY auth-service/src auth-service/src
+
+# Кеш зависимостей Gradle переживает пересборки (BuildKit cache mount):
+# библиотеки не скачиваются заново при каждом изменении кода
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    gradle :auth-service:bootJar --no-daemon
 
 
 # ===== Stage 2: runtime =====
-FROM eclipse-temurin:21-jdk-alpine
+# Для запуска нужен только JRE: образ меньше и в нём нет компилятора
+FROM eclipse-temurin:21-jre-alpine
+
+# Приложение не должно работать от root внутри контейнера
+RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-COPY --from=building_jar /app/auth-service/build/libs/*.jar app.jar
+COPY --from=build /app/auth-service/build/libs/*.jar app.jar
 
-EXPOSE 8081
+USER app
+
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

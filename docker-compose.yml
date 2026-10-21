@@ -15,7 +15,7 @@ services:
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -35,7 +35,7 @@ services:
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,7 +55,7 @@ services:
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -75,7 +75,7 @@ services:
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -93,23 +93,26 @@ services:
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CLUSTER_ID: <generated-uuid>
+      # Любой base64-UUID из 22 символов; сгенерировать: kafka-storage.sh random-uuid
+      KAFKA_CLUSTER_ID: OO77msMOR1-AH_TDLmxTvw
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       # Для транзакций на одном брокере: по умолчанию Kafka требует 3 реплики
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
-      - kafka_data:/apache/kafka
+      - kafka_data:/var/lib/kafka/data
 #    ports:
 #      - "29092:29092"
     networks:
       - task-net
     healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list" ]
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list" ]
       interval: 10s
       timeout: 10s
       retries: 10
+      start_period: 15s
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2
@@ -126,13 +129,20 @@ services:
       KC_HTTP_PORT: "${KEYCLOAK_PORT:-8080}"
       # Подставляется в demo-realm.json при импорте (${KEYCLOAK_CLIENT_SECRET:auth-secret})
       KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:-auth-secret}"
+      # /health/ready на служебном порту 9000
+      KC_HEALTH_ENABLED: true
     depends_on:
       keycloak-db:
         condition: service_healthy
-      kafka:
-        condition: service_started
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import
+    healthcheck:
+      # В образе Keycloak нет curl/wget, поэтому HTTP-запрос через /dev/tcp средствами bash
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 #    ports:
 #      - "8082:8080"
     networks:
@@ -158,7 +168,13 @@ services:
       task-db:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:${TASK_SERVICE_PORT:-8080}/actuator/health | grep -q UP" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks:
       - task-net
 
@@ -178,8 +194,16 @@ services:
       REALM: "${REALM:-demo}"
       KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:-auth-secret}"
     depends_on:
-      task-service:
-        condition: service_started
+      keycloak:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:${AUTH_SERVICE_PORT:-8080}/actuator/health | grep -q UP" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks:
       - task-net
 
@@ -209,7 +233,13 @@ services:
       accounting-db:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:${ACCOUNTING_SERVICE_PORT:-8080}/actuator/health | grep -q UP" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks:
       - task-net
 
@@ -225,15 +255,21 @@ services:
       SEARCH_DB_PORT: "${SEARCH_DB_PORT:-5432}"
       SEARCH_DB_NAME: "${SEARCH_DB_NAME:-search_service}"
       SEARCH_DB_USER: "${SEARCH_DB_USER:-postgres}"
-      SEARCH_DB_PASSWORD: "${SEACRH_DB_PASSWORD:-postgres}"
+      SEARCH_DB_PASSWORD: "${SEARCH_DB_PASSWORD:-postgres}"
       SEARCH_SERVICE_PORT: "${SEARCH_SERVICE_PORT:-8080}"
       KAFKA_HOST: "${KAFKA_HOST:-kafka}"
       KAFKA_PORT: "${KAFKA_PORT:-9092}"
     depends_on:
-      accounting-db:
+      search-db:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:${SEARCH_SERVICE_PORT:-8080}/actuator/health | grep -q UP" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks:
       - task-net
 
@@ -258,9 +294,13 @@ services:
       REALM: "${REALM:-demo}"
     depends_on:
       auth-service:
-        condition: service_started
+        condition: service_healthy
       task-service:
-        condition: service_started
+        condition: service_healthy
+      accounting-service:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
     networks:
       - task-net
 
