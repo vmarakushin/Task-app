@@ -80,6 +80,21 @@ public class KeycloakClient {
         }
     }
 
+    /**
+     * Удаляет пользователя. 404 - не ошибка: значит, удалять уже нечего.
+     */
+    public void deleteUser(UUID id) {
+        try (Response response = keycloak.realm(props.realm())
+                .users()
+                .delete(id.toString())) {
+
+            int status = response.getStatus();
+            if (status != 204 && status != 404) {
+                throw new KeycloakException("Failed to delete user " + id + ", HTTP " + status);
+            }
+        }
+    }
+
     public TokenResponse login(String email, String password) {
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();

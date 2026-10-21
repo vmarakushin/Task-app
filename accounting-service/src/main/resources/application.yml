@@ -23,6 +23,8 @@ spring:
       group-id: accounting-service
       auto-offset-reset: earliest
       enable-auto-commit: false
+      # не видеть сообщения из отменённых Kafka-транзакций (auth-service)
+      isolation-level: read_committed
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       # ErrorHandlingDeserializer: битый JSON не роняет poll(), а превращается
       # в DeserializationException, которое DefaultErrorHandler сразу отправит в DLT.

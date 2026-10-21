@@ -13,11 +13,18 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void sendUserCreatedEvent(UserCreatedEvent event) {
-        kafkaTemplate.send(Topics.USER_FLOW, event.id().toString(), event).join();
-    }
+    /**
+     * Оба события уходят в одной Kafka-транзакции: консьюмеры с isolation.level=read_committed
+     * увидят либо оба, либо ни одного. Метод возвращается только после commit,
+     * любая ошибка (в т.ч. недоступность брокера) приводит к abort и пробрасывается.
+     */
+    public void sendUserRegistered(UserCreatedEvent created, UserStreamEvent stream) {
+        String key = created.id().toString();
 
-    public void sendUserStreamEvent(UserStreamEvent event) {
-        kafkaTemplate.send(Topics.USER_STREAM, event.id().toString(), event).join();
+        kafkaTemplate.executeInTransaction(operations -> {
+            operations.send(Topics.USER_FLOW, key, created);
+            operations.send(Topics.USER_STREAM, key, stream);
+            return null;
+        });
     }
 }
